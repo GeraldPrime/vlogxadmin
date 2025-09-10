@@ -1,0 +1,19 @@
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+
+<div>
+    <div class="stats-card">
+        <h3>Driver Statistics</h3>
+        <p>Total Drivers: {{ driver_stats.total_drivers|default:0 }}</p>
+        <p>Active Drivers: {{ driver_stats.active_drivers|default:0 }}</p>
+        <p>Inactive Drivers: {{ driver_stats.inactive_drivers|default:0 }}</p>
+    </div>
+    
+    <div class="stats-card">
+        <h3>Customer Statistics</h3>
+        <p>Total Customers: {{ customer_stats.total_customers|default:0 }}</p>
+    </div>
+</div>
+{% endblock %}

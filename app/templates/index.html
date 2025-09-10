@@ -1,0 +1,148 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            
+            <!-- Page Title -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <ol class="breadcrumb m-0">
+                                <li class="breadcrumb-item"><a href="javascript: void(0);">Logistics</a></li>
+                                <li class="breadcrumb-item"><a href="javascript: void(0);">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Welcome!</li>
+                            </ol>
+                        </div>
+                        <h4 class="page-title">Welcome!</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards with Real Data -->
+            <div class="row">
+                <div class="col-xxl-3 col-sm-6">
+                    <div class="card widget-flat text-bg-primary">
+                        <div class="card-body">
+                            <div class="float-end">
+                                <i class="ri-steering-2-line widget-icon"></i>
+                            </div>
+                            <h6 class="text-uppercase mt-0" title="Total Drivers">Total Drivers</h6>
+                            <h2 class="my-2">{{ total_drivers|default:"0" }}</h2>
+                            <p class="mb-0">
+                                <span class="badge bg-white bg-opacity-10 me-1">{{ active_drivers|default:"0" }} Online</span>
+                                <span class="badge bg-white bg-opacity-10 me-1">{{ offline_drivers|default:"0" }} Offline</span>
+                                <span class="text-nowrap">Registered drivers</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xxl-3 col-sm-6">
+                    <div class="card widget-flat text-bg-info">
+                        <div class="card-body">
+                            <div class="float-end">
+                                <i class="ri-user-3-line widget-icon"></i>
+                            </div>
+                            <h6 class="text-uppercase mt-0" title="Total Customers">Total Customers</h6>
+                            <h2 class="my-2">{{ total_customers|default:"0" }}</h2>
+                            <p class="mb-0">
+                                <span class="badge bg-white bg-opacity-10 me-1">Active</span>
+                                <span class="text-nowrap">Registered customers (Active/Inactive breakdown coming soon)</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xxl-3 col-sm-6">
+                    <div class="card widget-flat text-bg-warning">
+                        <div class="card-body">
+                            <div class="float-end">
+                                <i class="ri-shopping-basket-line widget-icon"></i>
+                            </div>
+                            <h6 class="text-uppercase mt-0" title="Orders">Orders</h6>
+                            <h2 class="my-2">Coming Soon</h2>
+                            <p class="mb-0">
+                                <span class="badge bg-white bg-opacity-25 me-1">New Feature</span>
+                                <span class="text-nowrap">Order management</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xxl-3 col-sm-6">
+                    <div class="card widget-flat text-bg-success">
+                        <div class="card-body">
+                            <div class="float-end">
+                                <i class="ri-truck-line widget-icon"></i>
+                            </div>
+                            <h6 class="text-uppercase mt-0" title="Vehicles">Vehicles</h6>
+                            <h2 class="my-2">Coming Soon</h2>
+                            <p class="mb-0">
+                                <span class="badge bg-white bg-opacity-10 me-1">New Feature</span>
+                                <span class="text-nowrap">Vehicle management</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Quick Actions</h4>
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <a href="{% url 'drivers_management' %}" class="btn btn-primary btn-lg w-100 mb-2">
+                                        <i class="ri-steering-2-line me-2"></i>
+                                        Manage Drivers
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a href="{% url 'customers_management' %}" class="btn btn-info btn-lg w-100 mb-2">
+                                        <i class="ri-user-3-line me-2"></i>
+                                        Manage Customers
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <a href="{% url 'vehicle_management' %}" class="btn btn-warning btn-lg w-100 mb-2">
+                                        <i class="ri-truck-line me-2"></i>
+                                        Manage Vehicles
+                                    </a>
+                                </div>
+                                <div class="col-md-3">
+                                    <button class="btn btn-success btn-lg w-100 mb-2" disabled>
+                                        <i class="ri-shopping-bag-3-line me-2"></i>
+                                        Manage Orders
+                                        <small class="d-block">Coming Soon</small>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rest of your existing dashboard content -->
+            <!-- You can keep your charts and other widgets here -->
+
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <script>document.write(new Date().getFullYear())</script> © Logistics Admin
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+{% endblock content %}

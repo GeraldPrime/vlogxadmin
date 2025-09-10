@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            
+            <!-- Page Title -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <ol class="breadcrumb m-0">
+                                <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Customer Management</li>
+                            </ol>
+                        </div>
+                        <h4 class="page-title">Customer Management</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card widget-flat text-bg-info">
+                        <div class="card-body">
+                            <div class="float-end">
+                                <i class="ri-user-3-line widget-icon"></i>
+                            </div>
+                            <h6 class="text-uppercase mt-0">Total Customers</h6>
+                            <h2 class="my-2">{{ customers_count }}</h2>
+                            <p class="mb-0">
+                                <span class="text-nowrap">All registered customers</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card widget-flat text-bg-success">
+                        <div class="card-body">
+                            <div class="float-end">
+                                <i class="ri-user-star-line widget-icon"></i>
+                            </div>
+                            <h6 class="text-uppercase mt-0">Active This Month</h6>
+                            <h2 class="my-2">{{ customers_count }}</h2>
+                            <p class="mb-0">
+                                <span class="text-nowrap">Recent activity</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customers Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="header-title mb-0">All Customers</h4>
+                                <div class="dropdown">
+                                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="ri-more-2-fill"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="#" onclick="refreshCustomers()">
+                                            <i class="ri-refresh-line me-1"></i> Refresh
+                                        </a>
+                                        <a class="dropdown-item" href="#" onclick="exportCustomers()">
+                                            <i class="ri-download-line me-1"></i> Export
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="customersTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Customer Info</th>
+                                            <th>Contact</th>
+                                            <th>Location</th>
+                                            <th>Joined</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for customer in customers %}
+                                        <tr id="customer-{{ customer.id }}">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-light rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                                        <i class="ri-user-line text-muted"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ customer.firstName|default:"N/A" }} {{ customer.lastName|default:"" }}</h6>
+                                                        <small class="text-muted">ID: {{ customer.id|truncatechars:8 }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <div class="mb-1">
+                                                        <i class="ri-mail-line text-muted me-1"></i>
+                                                        <small>{{ customer.email|default:"No email" }}</small>
+                                                    </div>
+                                                    <div>
+                                                        <i class="ri-phone-line text-muted me-1"></i>
+                                                        <small>{{ customer.phoneNumber|default:"No phone" }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small>{{ customer.address|default:"No address" }}</small>
+                                            </td>
+                                            <td>
+                                                <small>{{ customer.dateCreated|default:"Unknown" }}</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{% url 'customer_detail' customer.id %}" 
+                                                       class="btn btn-outline-info">
+                                                        <i class="ri-eye-line"></i>
+                                                    </a>
+                                                    <button class="btn btn-outline-danger delete-customer" 
+                                                            data-customer-id="{{ customer.id }}"
+                                                            data-customer-name="{{ customer.firstName }} {{ customer.lastName }}">
+                                                        <i class="ri-delete-bin-line"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4">
+                                                <i class="ri-user-line text-muted" style="font-size: 3rem;"></i>
+                                                <p class="text-muted mt-2">No customers found</p>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <script>document.write(new Date().getFullYear())</script> © Logistics Admin
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<!-- JavaScript for interactions -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete customer
+    document.querySelectorAll('.delete-customer').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const customerId = this.getAttribute('data-customer-id');
+            const customerName = this.getAttribute('data-customer-name');
+            
+            if (confirm(`Are you sure you want to delete customer "${customerName}"? This action cannot be undone.`)) {
+                fetch('{% url "delete_customer_ajax" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        customer_id: customerId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the row from table
+                        document.getElementById('customer-' + customerId).remove();
+                        showAlert('success', 'Customer deleted successfully');
+                        
+                        // Update counters
+                        location.reload(); // Simple way to update counters
+                    } else {
+                        showAlert('danger', 'Failed to delete customer: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', 'Error deleting customer');
+                    console.error('Error:', error);
+                });
+            }
+        });
+    });
+});
+
+function showAlert(type, message) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.top = '20px';
+    alert.style.right = '20px';
+    alert.style.zIndex = '9999';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 5000);
+}
+
+function refreshCustomers() {
+    location.reload();
+}
+
+function exportCustomers() {
+    showAlert('info', 'Export functionality coming soon!');
+}
+</script>
+{% endblock content %}
+
+<!-- Update your base.html sidebar to include proper links -->
+<!-- In your base.html, update the sidebar section -->
+<li class="side-nav-item">
+    <a href="{% url 'customers_management' %}" class="side-nav-link">
+        <i class="ri-user-3-line"></i>
+        <span class="badge bg-success float-end">{{ total_customers|default:"0" }}</span>
+        <span> Customer Management </span>
+    </a>
+</li>
+
+<li class="side-nav-item">
+    <a href="{% url 'drivers_management' %}" class="side-nav-link">
+        <i class="ri-steering-2-line"></i>
+        <span class="badge bg-success float-end">{{ total_drivers|default:"0" }}</span>
+        <span> Driver Management </span>
+    </a>
+</li>

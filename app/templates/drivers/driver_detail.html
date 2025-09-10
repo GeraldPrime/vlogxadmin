@@ -1,0 +1,312 @@
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+    <style>
+        .status-toggle-card {
+            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .status-toggle-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .document-image,
+        .vehicle-image {
+            max-width: 150px; /* Standardized size for all images */
+            max-height: 150px; /* Standardized height */
+            height: auto;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            margin: 5px;
+            object-fit: contain; /* Ensures images fit without distortion */
+        }
+
+        .vehicle-images-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .vehicle-images-row .image-container {
+            flex: 0 0 150px; /* Fixed width for each image container */
+            text-align: center;
+        }
+
+        .vehicle-images-row .image-label {
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 5px;
+            display: block;
+        }
+
+        .vehicle-images-row img {
+            width: 150px; /* Fixed width for each image */
+            height: 150px; /* Fixed height to match max-height */
+        }
+    </style>
+
+    <div class="content-page">
+        <div class="content">
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="profile-bg-picture" style="background-image:url('/static/images/bg-profile.jpg')">
+                            <span class="picture-bg-overlay"></span>
+                        </div>
+                        <div class="profile-user-box">
+                            <div class="row">
+                                <div class="col-sm-6">
+                                    <div class="profile-user-img">
+                                        <img src="/static/images/users/avatar-1.jpg" alt="Driver avatar" class="avatar-lg rounded-circle">
+                                    </div>
+                                    <h4 class="mt-4 fs-17 ellipsis">
+                                        {{ driver.firstName|default:"N/A" }} {{ driver.lastName|default:"" }}
+                                    </h4>
+                                    <p class="text-muted mb-0"><small>{{ driver.address|default:"N/A" }}, {{ driver.country|default:"N/A" }}</small></p>
+                                    <p class="text-muted mb-0"><small>Date Joined: {{ driver.dateCreated|default:"Unknown" }}</small></p>
+                                    <p class="text-muted mb-0"><small>Last Updated: {{ driver.dateLastModified|default:"Unknown" }}</small></p>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
+                                        <a href="{% url 'drivers_management' %}" class="btn btn-soft-primary">
+                                            <i class="ri-arrow-left-line me-1"></i> Back to List
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="status-toggle-card p-4">
+                            <div class="row align-items-center">
+                                <div class="col-md-8">
+                                    <h5 class="mb-2">
+                                        <i class="ri-user-settings-line me-2"></i>
+                                        Driver Approval Status
+                                    </h5>
+                                    <p class="text-muted mb-0">
+                                        Current Status: 
+                                        {% if driver.isApproved %}
+                                            <span class="badge bg-success ms-1">Approved</span>
+                                        {% else %}
+                                            <span class="badge bg-warning ms-1">Pending</span>
+                                        {% endif %}
+                                    </p>
+                                    <p class="text-muted mb-0">
+                                        Online Status: 
+                                        {% if driver.isDriverOnline %}
+                                            <span class="badge bg-success ms-1">Online</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary ms-1">Offline</span>
+                                        {% endif %}
+                                    </p>
+                                </div>
+                                <div class="col-md-4 text-end">
+                                    <div class="form-check form-switch">
+                                        <input class="form-check-input approval-switch" 
+                                               type="checkbox" 
+                                               data-driver-id="{{ driver.id }}"
+                                               {% if driver.isApproved %}checked{% endif %}>
+                                        <label class="form-check-label">
+                                            Toggle Approval
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-sm-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <ul class="nav nav-underline nav-justified gap-0">
+                                    <li class="nav-item"><a class="nav-link active">Driver Details</a></li>
+                                </ul>
+
+                                <div class="p-4">
+                                    <h5 class="fs-17 text-dark">Contact Information</h5>
+                                    <table class="table table-condensed mb-4 border-top">
+                                        <tbody>
+                                            <tr><th>Email</th><td>{{ driver.email|default:"N/A" }}</td></tr>
+                                            <tr><th>Phone</th><td>{{ driver.phoneNumber|default:"N/A" }}</td></tr>
+                                            <tr><th>Address</th><td>{{ driver.address|default:"N/A" }}</td></tr>
+                                            <tr><th>Country</th><td>{{ driver.country|default:"N/A" }}</td></tr>
+                                        </tbody>
+                                    </table>
+
+                                    <h5 class="fs-17 text-dark">Documents</h5>
+                                    {% if driver_documents %}
+                                        <div class="row">
+                                            {% if driver_documents.idFront %}
+                                                <div class="col-md-6">
+                                                    <h6>ID Front</h6>
+                                                    <img src="{{ driver_documents.idFront }}" alt="ID Front" class="document-image">
+                                                </div>
+                                            {% endif %}
+                                            {% if driver_documents.idBack %}
+                                                <div class="col-md-6">
+                                                    <h6>ID Back</h6>
+                                                    <img src="{{ driver_documents.idBack }}" alt="ID Back" class="document-image">
+                                                </div>
+                                            {% endif %}
+                                            {% if driver_documents.licenseFront %}
+                                                <div class="col-md-6">
+                                                    <h6>License Front</h6>
+                                                    <img src="{{ driver_documents.licenseFront }}" alt="License Front" class="document-image">
+                                                </div>
+                                            {% endif %}
+                                            {% if driver_documents.licenseBack %}
+                                                <div class="col-md-6">
+                                                    <h6>License Back</h6>
+                                                    <img src="{{ driver_documents.licenseBack }}" alt="License Back" class="document-image">
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No documents submitted.</p>
+                                    {% endif %}
+
+                                    <h5 class="fs-17 text-dark mt-4">Vehicle Information</h5>
+                                    {% if vehicle %}
+                                        <table class="table table-condensed mb-4 border-top">
+                                            <tbody>
+                                                <tr><th>Brand</th><td>{{ vehicle.carBrand|default:"N/A" }}</td></tr>
+                                                <tr><th>Model</th><td>{{ vehicle.carModel|default:"N/A" }}</td></tr>
+                                                <tr><th>Color</th><td>{{ vehicle.carColor|default:"N/A" }}</td></tr>
+                                                <tr><th>Plate Number</th><td>{{ vehicle.carPlateNum|default:"N/A" }}</td></tr>
+                                                <tr><th>Type</th><td>{{ vehicle.carType|default:"N/A" }}</td></tr>
+                                                <tr><th>Year</th><td>{{ vehicle.carYear|default:"N/A" }}</td></tr>
+                                                <tr><th>Approved</th><td>{% if vehicle.isApproved %}Yes{% else %}No{% endif %}</td></tr>
+                                            </tbody>
+                                        </table>
+                                        <h6>Vehicle Documents</h6>
+                                        <div class="vehicle-images-row">
+                                            {% if vehicle.vehicleDocument.carFrontImage %}
+                                                <div class="image-container">
+                                                    <img src="{{ vehicle.vehicleDocument.carFrontImage }}" alt="Car Front" class="vehicle-image">
+                                                    <span class="image-label">Car Front</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if vehicle.vehicleDocument.carBackImage %}
+                                                <div class="image-container">
+                                                    <img src="{{ vehicle.vehicleDocument.carBackImage }}" alt="Car Back" class="vehicle-image">
+                                                    <span class="image-label">Car Back</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if vehicle.vehicleDocument.carInsuranceImage %}
+                                                <div class="image-container">
+                                                    <img src="{{ vehicle.vehicleDocument.carInsuranceImage }}" alt="Insurance" class="vehicle-image">
+                                                    <span class="image-label">Insurance</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if vehicle.vehicleDocument.carRegistrationImage %}
+                                                <div class="image-container">
+                                                    <img src="{{ vehicle.vehicleDocument.carRegistrationImage }}" alt="Registration" class="vehicle-image">
+                                                    <span class="image-label">Registration</span>
+                                                </div>
+                                            {% endif %}
+                                            {% if vehicle.vehicleDocument.carRoadWorthinessImage %}
+                                                <div class="image-container">
+                                                    <img src="{{ vehicle.vehicleDocument.carRoadWorthinessImage }}" alt="Road Worthiness" class="vehicle-image">
+                                                    <span class="image-label">Road Worthiness</span>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="mt-3">
+                                            <div class="form-check form-switch">
+                                                <input class="form-check-input vehicle-approval-switch" 
+                                                       type="checkbox" 
+                                                       data-vehicle-id="{{ vehicle.id }}"
+                                                       {% if vehicle.isApproved %}checked{% endif %}>
+                                                <label class="form-check-label">
+                                                    Toggle Vehicle Approval
+                                                </label>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <p class="text-muted">No vehicle submitted for approval.</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.querySelector('.approval-switch').addEventListener('change', function() {
+            const driverId = this.getAttribute('data-driver-id');
+            const isApproved = this.checked;
+            
+            fetch('{% url "update_driver_status" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    driver_id: driverId,
+                    status: isApproved
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (!data.success) {
+                    this.checked = !isApproved;
+                    alert('Failed to update status: ' + data.message);
+                }
+            })
+            .catch(error => {
+                this.checked = !isApproved;
+                alert('Error updating status');
+                console.error('Error:', error);
+            });
+        });
+
+        const vehicleSwitch = document.querySelector('.vehicle-approval-switch');
+        if (vehicleSwitch) {
+            vehicleSwitch.addEventListener('change', function() {
+                const vehicleId = this.getAttribute('data-vehicle-id');
+                const isApproved = this.checked;
+                
+                fetch('/ajax/update-vehicle-status/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        vehicle_id: vehicleId,
+                        status: isApproved
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (!data.success) {
+                        this.checked = !isApproved;
+                        alert('Failed to update vehicle status: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    this.checked = !isApproved;
+                    alert('Error updating vehicle status');
+                    console.error('Error:', error);
+                });
+            });
+        }
+    </script>
+{% endblock %}

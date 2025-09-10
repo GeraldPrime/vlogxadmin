@@ -1,0 +1,6 @@
+firebase-key.json
+*.json # If you want to ignore all JSON files
+firebase-*.json # Or just Firebase-related JSON files
+firebase-key.json
+*.json # If you want to ignore all JSON files
+firebase-*.json # Or just Firebase-related JSON files

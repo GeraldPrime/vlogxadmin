@@ -1,0 +1,203 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <ol class="breadcrumb m-0">
+                                <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                                <li class="breadcrumb-item active">{{ page_title }}</li>
+                            </ol>
+                        </div>
+                        <h4 class="page-title">{{ page_title }}</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card widget-flat text-bg-warning">
+                        <div class="card-body">
+                            <div class="float-end"><i class="ri-time-line widget-icon"></i></div>
+                            <h6 class="text-uppercase mt-0">Pending Approval</h6>
+                            <h2 class="my-2">{{ pending_count }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card widget-flat text-bg-info">
+                        <div class="card-body">
+                            <div class="float-end"><i class="ri-check-line widget-icon"></i></div>
+                            <h6 class="text-uppercase mt-0">Approved</h6>
+                            <h2 class="my-2">{{ approved_count }}</h2>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card widget-flat text-bg-success">
+                        <div class="card-body">
+                            <div class="float-end"><i class="ri-play-circle-line widget-icon"></i></div>
+                            <h6 class="text-uppercase mt-0">Active</h6>
+                            <h2 class="my-2">{{ active_count }}</h2>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-0">Vehicle List</h4>
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Vehicle Info</th>
+                                            <th>Driver</th>
+                                            <th>Status</th>
+                                            <th>Approval</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for vehicle in vehicles %}
+                                        <tr>
+                                            <td>
+                                                <p><strong>Brand:</strong> {{ vehicle.carBrand|default:"N/A" }}</p>
+                                                <p><strong>Model:</strong> {{ vehicle.carModel|default:"N/A" }}</p>
+                                                <p><strong>Plate:</strong> {{ vehicle.carPlateNum|default:"N/A" }}</p>
+                                                <p><strong>Color:</strong> {{ vehicle.carColor|default:"N/A" }}</p>
+                                                <p><strong>Year:</strong> {{ vehicle.carYear|default:"N/A" }}</p>
+                                                <p><strong>Type:</strong> {{ vehicle.carType|default:"N/A" }}</p>
+                                            </td>
+                                            <td>
+                                                <a href="{% url 'driver_detail' vehicle.driver_id %}" class="text-decoration-none">
+                                                    {{ vehicle.driver_name|default:"Unknown" }}
+                                                </a>
+                                                <br>
+                                                <small>ID: {{ vehicle.driver_id|truncatechars:8|default:"N/A" }}</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge {% if vehicle.status == 'Pending Approval' %}bg-warning{% elif vehicle.status == 'Approved' %}bg-info{% else %}bg-success{% endif %}">
+                                                    {{ vehicle.status }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input toggle-approval" 
+                                                           type="checkbox" 
+                                                           data-vehicle-id="{{ vehicle.id }}"
+                                                           {% if vehicle.isApproved %}checked{% endif %}>
+                                                    <label class="form-check-label">Toggle</label>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button class="btn btn-outline-danger delete-vehicle" 
+                                                            data-vehicle-id="{{ vehicle.id }}">
+                                                        Delete
+                                                    </button>
+                                                    <a href="{% url 'driver_detail' vehicle.driver_id %}" class="btn btn-outline-primary view-driver" 
+                                                       {% if not vehicle.driver_id %}disabled{% endif %}>
+                                                        View
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="5" class="text-center py-4">
+                                                <i class="ri-truck-line text-muted" style="font-size: 3rem;"></i>
+                                                <p class="text-muted mt-2">No vehicles found</p>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <footer class="footer">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <script>document.write(new Date().getFullYear())</script> © Logistics Admin
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle approval toggle
+    document.querySelectorAll('.toggle-approval').forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            const vehicleId = this.getAttribute('data-vehicle-id');
+            const isApproved = this.checked;
+            if (confirm(`Are you sure you want to ${isApproved ? 'approve' : 'unapprove'} this vehicle?`)) {
+                fetch('/ajax/update-vehicle-status/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ vehicle_id: vehicleId, status: isApproved })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to update vehicle status: ' + data.message);
+                        this.checked = !isApproved; // Revert toggle if failed
+                    }
+                })
+                .catch(error => {
+                    alert('Error updating vehicle status');
+                    this.checked = !isApproved; // Revert toggle on error
+                    console.error('Error:', error);
+                });
+            } else {
+                this.checked = !isApproved; // Revert toggle if user cancels
+            }
+        });
+    });
+
+    // Handle delete buttons
+    document.querySelectorAll('.delete-vehicle').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const vehicleId = this.getAttribute('data-vehicle-id');
+            if (confirm('Are you sure you want to delete this vehicle?')) {
+                fetch('/ajax/delete-vehicle/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({ vehicle_id: vehicleId })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to delete vehicle: ' + data.message);
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

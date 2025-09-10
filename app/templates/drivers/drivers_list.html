@@ -1,0 +1,314 @@
+<!-- logistics_app/templates/drivers/drivers_list.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            
+            <!-- Page Title -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <ol class="breadcrumb m-0">
+                                <li class="breadcrumb-item"><a href="{% url 'home' %}">Dashboard</a></li>
+                                <li class="breadcrumb-item active">Driver Management</li>
+                            </ol>
+                        </div>
+                        <h4 class="page-title">Driver Management</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="card widget-flat text-bg-primary">
+                        <div class="card-body">
+                            <div class="float-end">
+                                <i class="ri-steering-2-line widget-icon"></i>
+                            </div>
+                            <h6 class="text-uppercase mt-0">Total Drivers</h6>
+                            <h2 class="my-2">{{ drivers_count }}</h2>
+                            <p class="mb-0">
+                                <span class="text-nowrap">All registered drivers</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card widget-flat text-bg-success">
+                        <div class="card-body">
+                            <div class="float-end">
+                                <i class="ri-user-star-line widget-icon"></i>
+                            </div>
+                            <h6 class="text-uppercase mt-0">Active Drivers</h6>
+                            <h2 class="my-2">{{ active_drivers }}</h2>
+                            <p class="mb-0">
+                                <span class="text-nowrap">Currently online</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-4">
+                    <div class="card widget-flat text-bg-warning">
+                        <div class="card-body">
+                            <div class="float-end">
+                                <i class="ri-user-unfollow-line widget-icon"></i>
+                            </div>
+                            <h6 class="text-uppercase mt-0">Offline Drivers</h6>
+                            <h2 class="my-2">{{ drivers_count|add:"-"|add:active_drivers }}</h2>
+                            <p class="mb-0">
+                                <span class="text-nowrap">Currently offline</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drivers Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="header-title mb-0">All Drivers</h4>
+                                <div class="dropdown">
+                                    <button class="btn btn-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                        <i class="ri-more-2-fill"></i>
+                                    </button>
+                                    <div class="dropdown-menu">
+                                        <a class="dropdown-item" href="#" onclick="refreshDrivers()">
+                                            <i class="ri-refresh-line me-1"></i> Refresh
+                                        </a>
+                                        <a class="dropdown-item" href="#" onclick="exportDrivers()">
+                                            <i class="ri-download-line me-1"></i> Export
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0" id="driversTable">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Driver Info</th>
+                                            <th>Contact</th>
+                                            <th>Status</th>
+                                            <th>Approval</th>
+                                            <th>Joined</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for driver in drivers %}
+                                        <tr id="driver-{{ driver.id }}">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-light rounded-circle me-2 d-flex align-items-center justify-content-center">
+                                                        <i class="ri-user-line text-muted"></i>
+                                                    </div>
+                                                    <div>
+                                                        <h6 class="mb-0">{{ driver.firstName|default:"N/A" }} {{ driver.lastName|default:"" }}</h6>
+                                                        <small class="text-muted">ID: {{ driver.id|truncatechars:8 }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <div class="mb-1">
+                                                        <i class="ri-mail-line text-muted me-1"></i>
+                                                        <small>{{ driver.email|default:"No email" }}</small>
+                                                    </div>
+                                                    <div>
+                                                        <i class="ri-phone-line text-muted me-1"></i>
+                                                        <small>{{ driver.phoneNumber|default:"No phone" }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if driver.isDriverOnline %}
+                                                    <span class="badge bg-success">Online</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">Offline</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input approval-switch" 
+                                                           type="checkbox" 
+                                                           data-driver-id="{{ driver.id }}"
+                                                           {% if driver.isApproved %}checked{% endif %}>
+                                                    <label class="form-check-label">
+                                                        <span class="approved-text">
+                                                            {% if driver.isApproved %}Approved{% else %}Pending{% endif %}
+                                                        </span>
+                                                    </label>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <small>{{ driver.dateCreated|default:"Unknown" }}</small>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="{% url 'driver_detail' driver.id %}" 
+                                                       class="btn btn-outline-info">
+                                                        <i class="ri-eye-line"></i>
+                                                    </a>
+                                                    <button class="btn btn-outline-danger delete-driver" 
+                                                            data-driver-id="{{ driver.id }}"
+                                                            data-driver-name="{{ driver.firstName }} {{ driver.lastName }}">
+                                                        <i class="ri-delete-bin-line"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4">
+                                                <i class="ri-user-line text-muted" style="font-size: 3rem;"></i>
+                                                <p class="text-muted mt-2">No drivers found</p>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <script>document.write(new Date().getFullYear())</script> © Logistics Admin
+                </div>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<!-- JavaScript for interactions -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle approval switch changes
+    document.querySelectorAll('.approval-switch').forEach(function(switchEl) {
+        switchEl.addEventListener('change', function() {
+            const driverId = this.getAttribute('data-driver-id');
+            const isApproved = this.checked;
+            
+            fetch('{% url "update_driver_status" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                body: JSON.stringify({
+                    driver_id: driverId,
+                    status: isApproved
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update the label text
+                    const label = this.parentElement.querySelector('.approved-text');
+                    label.textContent = isApproved ? 'Approved' : 'Pending';
+                    
+                    // Show success message
+                    showAlert('success', 'Driver status updated successfully');
+                } else {
+                    // Revert the switch
+                    this.checked = !isApproved;
+                    showAlert('danger', 'Failed to update driver status: ' + data.message);
+                }
+            })
+            .catch(error => {
+                // Revert the switch
+                this.checked = !isApproved;
+                showAlert('danger', 'Error updating driver status');
+                console.error('Error:', error);
+            });
+        });
+    });
+    
+    // Handle delete driver
+    document.querySelectorAll('.delete-driver').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            const driverId = this.getAttribute('data-driver-id');
+            const driverName = this.getAttribute('data-driver-name');
+            
+            if (confirm(`Are you sure you want to delete driver "${driverName}"? This action cannot be undone.`)) {
+                fetch('{% url "delete_driver_ajax" %}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    body: JSON.stringify({
+                        driver_id: driverId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Remove the row from table
+                        document.getElementById('driver-' + driverId).remove();
+                        showAlert('success', 'Driver deleted successfully');
+                        
+                        // Update counters
+                        location.reload(); // Simple way to update counters
+                    } else {
+                        showAlert('danger', 'Failed to delete driver: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    showAlert('danger', 'Error deleting driver');
+                    console.error('Error:', error);
+                });
+            }
+        });
+    });
+});
+
+function showAlert(type, message) {
+    // Create alert element
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type} alert-dismissible fade show position-fixed`;
+    alert.style.top = '20px';
+    alert.style.right = '20px';
+    alert.style.zIndex = '9999';
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alert);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (alert.parentNode) {
+            alert.parentNode.removeChild(alert);
+        }
+    }, 5000);
+}
+
+function refreshDrivers() {
+    location.reload();
+}
+
+function exportDrivers() {
+    // Implement export functionality
+    showAlert('info', 'Export functionality coming soon!');
+}
+</script>
+{% endblock content %}

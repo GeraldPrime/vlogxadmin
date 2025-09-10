@@ -1,0 +1,40 @@
+# logistics_app/templates/admin/customers_list.html
+{% extends 'admin/base.html' %}
+
+{% block content %}
+<h2>{{ title }}</h2>
+
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Phone</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for customer in customers %}
+        <tr>
+            <td>{{ customer.id }}</td>
+            <td>{{ customer.name|default:"N/A" }}</td>
+            <td>{{ customer.email|default:"N/A" }}</td>
+            <td>{{ customer.phone|default:"N/A" }}</td>
+            <td>
+                <form method="post" style="display: inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="customer_id" value="{{ customer.id }}">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure?')">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="5">No customers found</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
