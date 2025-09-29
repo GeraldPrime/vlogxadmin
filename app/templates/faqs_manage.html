@@ -1,0 +1,270 @@
+
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .faq-header {
+        background: #2c3e50;
+        border-radius: 12px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #3498db;
+    }
+
+    .faq-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+        overflow: hidden;
+    }
+
+    .faq-card:hover {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        transform: translateY(-2px);
+    }
+
+    .faq-item {
+        padding: 1.5rem;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+    }
+
+    .faq-item:last-child {
+        border-bottom: none;
+    }
+
+    .faq-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .faq-question {
+        font-weight: 600;
+        color: #2d3748;
+        font-size: 1.05rem;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: start;
+        gap: 0.75rem;
+    }
+
+    .faq-question-icon {
+        color: #3498db;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+        margin-top: 0.1rem;
+    }
+
+    .faq-answer {
+        color: #718096;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        margin-bottom: 1rem;
+        padding-left: 2rem;
+    }
+
+    .faq-actions {
+        display: flex;
+        gap: 0.5rem;
+        padding-left: 2rem;
+    }
+
+    .btn-action {
+        padding: 0.5rem 1.25rem;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border: none;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-edit {
+        background-color: #3498db;
+        color: white;
+    }
+
+    .btn-edit:hover {
+        background-color: #2980b9;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(52, 152, 219, 0.3);
+    }
+
+    .btn-delete {
+        background-color: #e74c3c;
+        color: white;
+    }
+
+    .btn-delete:hover {
+        background-color: #c0392b;
+        color: white;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(231, 76, 60, 0.3);
+    }
+
+    .btn-add-faq {
+        background: #27ae60;
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        box-shadow: 0 2px 8px rgba(39, 174, 96, 0.2);
+    }
+
+    .btn-add-faq:hover {
+        background: #229954;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        color: white;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+
+    .empty-state-icon {
+        font-size: 4rem;
+        color: #cbd5e0;
+        margin-bottom: 1.5rem;
+    }
+
+    .empty-state-title {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.75rem;
+    }
+
+    .empty-state-text {
+        color: #718096;
+        margin-bottom: 2rem;
+    }
+
+    .stats-badge {
+        background-color: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        display: inline-block;
+        margin-top: 0.5rem;
+    }
+
+    @media (max-width: 768px) {
+        .faq-header {
+            padding: 1.5rem;
+        }
+
+        .faq-actions {
+            flex-direction: column;
+        }
+
+        .btn-action {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .faq-answer {
+            padding-left: 0;
+        }
+
+        .faq-actions {
+            padding-left: 0;
+        }
+    }
+</style>
+
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="faq-header">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <h2 class="mb-2" style="font-weight: 700;">Frequently Asked Questions</h2>
+                                <p class="mb-0 opacity-90">Manage your customer support FAQ content</p>
+                                {% if faqs %}
+                                    <span class="stats-badge">
+                                        <i class="ri-question-line"></i> {{ faqs|length }} FAQ{{ faqs|length|pluralize }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            <a href="{% url 'faq_create' %}" class="btn-add-faq">
+                                <i class="ri-add-line"></i> Add New FAQ
+                            </a>
+                        </div>
+                    </div>
+
+                    {% if faqs %}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="faq-card">
+                                    <div class="card-body p-0">
+                                        {% for faq in faqs %}
+                                            <div class="faq-item">
+                                                <div class="faq-question">
+                                                    <span class="faq-question-icon">
+                                                        <i class="ri-questionnaire-line"></i>
+                                                    </span>
+                                                    <span>{{ faq.question }}</span>
+                                                </div>
+                                                <div class="faq-answer">
+                                                    {{ faq.answer }}
+                                                </div>
+                                                <div class="faq-actions">
+                                                    <a href="{% url 'faq_edit' faq.id %}" class="btn-action btn-edit">
+                                                        <i class="ri-edit-line"></i> Edit
+                                                    </a>
+                                                    <a href="{% url 'faq_delete' faq.id %}" 
+                                                       class="btn-action btn-delete" 
+                                                       onclick="return confirm('Are you sure you want to delete this FAQ? This action cannot be undone.');">
+                                                        <i class="ri-delete-bin-line"></i> Delete
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="faq-card">
+                                    <div class="card-body">
+                                        <div class="empty-state">
+                                            <div class="empty-state-icon">
+                                                <i class="ri-questionnaire-line"></i>
+                                            </div>
+                                            <h3 class="empty-state-title">No FAQs Yet</h3>
+                                            <p class="empty-state-text">
+                                                Start building your FAQ section by adding your first question and answer.
+                                            </p>
+                                            <a href="{% url 'faq_create' %}" class="btn-add-faq">
+                                                <i class="ri-add-line"></i> Create Your First FAQ
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

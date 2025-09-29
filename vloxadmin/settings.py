@@ -15,22 +15,23 @@ import firebase_admin
 from firebase_admin import credentials
 import os
 
-
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
 # Firebase configuration
 FIREBASE_CREDENTIALS_PATH = os.path.join(BASE_DIR, 'firebase-key.json')
-# FIREBASE_CREDENTIALS_PATH = config('FIREBASE_CREDENTIALS_PATH', default='firebase-key.json')
 
-# cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
-# firebase_admin.initialize_app(cred)
-
+# Initialize Firebase only if credentials file exists
 if not firebase_admin._apps:
-    cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
-    firebase_admin.initialize_app(cred)
+    try:
+        if os.path.exists(FIREBASE_CREDENTIALS_PATH):
+            cred = credentials.Certificate(FIREBASE_CREDENTIALS_PATH)
+            firebase_admin.initialize_app(cred)
+            print("✅ Firebase connection established successfully")
+        else:
+            print("⚠️ Firebase credentials file not found. Some features may not work properly.")
+    except Exception as e:
+        print(f"⚠️ Firebase initialization error: {e}")
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
@@ -149,6 +150,18 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# appkey: mzph zugq xbhp bkiz 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'blueducksltd@gmail.com'           
+DEFAULT_FROM_EMAIL = 'Blueducks Limited Software Company <blueducksltd@gmail.com>'                      
+# EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')            
+EMAIL_HOST_PASSWORD = 'mzph zugq xbhp bkiz'           
+EMAIL_USE_TLS = False
+EMAIL_USE_SSL = True
+EMAIL_PORT = 465
+EMAIL_TIMEOUT = 30
 
 
 

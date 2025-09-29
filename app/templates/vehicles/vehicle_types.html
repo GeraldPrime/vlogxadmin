@@ -1,0 +1,333 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createVehicleTypeModal">
+                                <i class="ri-add-line me-1"></i> Add Vehicle Type
+                            </button>
+                        </div>
+                        <h4 class="page-title">Vehicle Types Management</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-centered table-nowrap table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Vehicle Type</th>
+                                            <th>Icon</th>
+                                            <th>Status</th>
+                                            <th>Created Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if vehicle_types %}
+                                            {% for vehicle_type in vehicle_types %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-xs me-2">
+                                                            <span class="avatar-title rounded-circle bg-primary text-white">
+                                                                {{ vehicle_type.type|first|upper }}
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <strong>{{ vehicle_type.type|title }}</strong>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="{{ vehicle_type.vehicleIcon|default:'ri-car-line' }} fs-20 text-primary me-2"></i>
+                                                        <span class="text-muted">{{ vehicle_type.vehicleIcon|default:"ri-car-line" }}</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge {% if vehicle_type.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                                        {{ vehicle_type.status|default:"Active" }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ vehicle_type.dateCreated|date:"M d, Y"|default:"N/A" }}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                                data-bs-toggle="modal" data-bs-target="#editVehicleTypeModal"
+                                                                data-type-id="{{ vehicle_type.id }}"
+                                                                data-type="{{ vehicle_type.type }}"
+                                                                data-icon="{{ vehicle_type.vehicleIcon }}"
+                                                                data-status="{{ vehicle_type.status }}">
+                                                            <i class="ri-edit-line"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                onclick="deleteVehicleType('{{ vehicle_type.id }}', '{{ vehicle_type.type }}')">
+                                                            <i class="ri-delete-bin-line"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="5" class="text-center">
+                                                    <div class="py-4">
+                                                        <i class="ri-car-line fs-48 text-muted mb-3"></i>
+                                                        <h5>No Vehicle Types</h5>
+                                                        <p class="text-muted">Create vehicle types to define different vehicle categories like Car, Truck, Bike, etc.</p>
+                                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createVehicleTypeModal">
+                                                            <i class="ri-add-line me-1"></i> Add Vehicle Type
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Vehicle Type Modal -->
+<div class="modal fade" id="createVehicleTypeModal" tabindex="-1" aria-labelledby="createVehicleTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'create_vehicle_type' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createVehicleTypeModalLabel">Create Vehicle Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="type" class="form-label">Vehicle Type Name</label>
+                        <input type="text" class="form-control" id="type" name="type" required placeholder="e.g., Car, Truck, Bike, Van">
+                        <small class="form-text text-muted">Enter the vehicle category name</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="vehicleIcon" class="form-label">Vehicle Icon Name</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="vehicleIcon" name="vehicleIcon" required 
+                                   placeholder="e.g., car, truck, bike, motorcycle">
+                            <span class="input-group-text" id="iconPreview">
+                                <span class="text-primary fw-bold">CAR</span>
+                            </span>
+                        </div>
+                        <small class="form-text text-muted">
+                            Enter a simple icon name that matches your Flutter app's SVG assets (e.g., car, truck, bike, motorcycle, bus, van)
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                        <small class="form-text text-muted">Only active vehicle types will be available for selection</small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>Note:</strong> Vehicle types define the categories of vehicles available in your system. Each type should have a unique name and icon.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Vehicle Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Vehicle Type Modal -->
+<div class="modal fade" id="editVehicleTypeModal" tabindex="-1" aria-labelledby="editVehicleTypeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="editVehicleTypeForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editVehicleTypeModalLabel">Edit Vehicle Type</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_type" class="form-label">Vehicle Type Name</label>
+                        <input type="text" class="form-control" id="edit_type" name="name" required>
+                        <small class="form-text text-muted">Enter the vehicle category name</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_vehicleIcon" class="form-label">Vehicle Icon Name</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="edit_vehicleIcon" name="vehicleIcon" required 
+                                   placeholder="e.g., car, truck, bike, motorcycle">
+                            <span class="input-group-text" id="editIconPreview">
+                                <span class="text-primary fw-bold">CAR</span>
+                            </span>
+                        </div>
+                        <small class="form-text text-muted">
+                            Enter a simple icon name that matches your Flutter app's SVG assets (e.g., car, truck, bike, motorcycle, bus, van)
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="edit_status" class="form-label">Status</label>
+                        <select class="form-select" id="edit_status" name="status" required>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                        <small class="form-text text-muted">Only active vehicle types will be available for selection</small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>Note:</strong> Vehicle types define the categories of vehicles available in your system. Each type should have a unique name and icon.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Vehicle Type</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+.fs-20 {
+    font-size: 20px;
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle edit modal
+    const editModal = document.getElementById('editVehicleTypeModal');
+    const editForm = document.getElementById('editVehicleTypeForm');
+    
+    editModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const typeId = button.getAttribute('data-type-id');
+        const type = button.getAttribute('data-type');
+        const icon = button.getAttribute('data-icon');
+        const status = button.getAttribute('data-status');
+        
+        document.getElementById('edit_type').value = type || '';
+        document.getElementById('edit_vehicleIcon').value = icon || '';
+        document.getElementById('edit_status').value = status || 'Active';
+        
+        // Update edit preview with current icon
+        updateEditIconPreview(icon || 'car');
+        
+        editForm.action = `/vehicle-types/${typeId}/update/`;
+    });
+    
+    // Icon preview functionality for create modal
+    const createIconInput = document.getElementById('vehicleIcon');
+    const createIconPreview = document.getElementById('iconPreview');
+    
+    if (createIconInput) {
+        createIconInput.addEventListener('input', function() {
+            const iconName = this.value.trim() || 'car';
+            createIconPreview.innerHTML = `<span class="text-primary fw-bold">${iconName.toUpperCase()}</span>`;
+        });
+    }
+    
+    // Icon preview functionality for edit modal
+    const editIconInput = document.getElementById('edit_vehicleIcon');
+    const editIconPreview = document.getElementById('editIconPreview');
+    
+    if (editIconInput) {
+        editIconInput.addEventListener('input', function() {
+            const iconName = this.value.trim() || 'car';
+            editIconPreview.innerHTML = `<span class="text-primary fw-bold">${iconName.toUpperCase()}</span>`;
+        });
+    }
+    
+    // Function to update edit icon preview
+    function updateEditIconPreview(iconName) {
+        if (editIconPreview) {
+            editIconPreview.innerHTML = `<span class="text-primary fw-bold">${iconName.toUpperCase()}</span>`;
+        }
+    }
+    
+    // Add quick icon suggestions for common vehicle types
+    const iconSuggestions = [
+        { name: 'Car', icon: 'car' },
+        { name: 'Truck', icon: 'truck' },
+        { name: 'Bike', icon: 'bike' },
+        { name: 'Motorcycle', icon: 'motorcycle' },
+        { name: 'Bus', icon: 'bus' },
+        { name: 'Van', icon: 'van' },
+    ];
+    
+    // Add click handlers for quick icon selection
+    function addIconSuggestions(inputId, previewId) {
+        const input = document.getElementById(inputId);
+        const preview = document.getElementById(previewId);
+        
+        if (input && preview) {
+            // Create suggestions container
+            const suggestionsDiv = document.createElement('div');
+            suggestionsDiv.className = 'mt-2';
+            suggestionsDiv.innerHTML = '<small class="text-muted">Quick suggestions: </small>';
+            
+            iconSuggestions.forEach(item => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'btn btn-sm btn-outline-secondary me-1 mb-1';
+                btn.innerHTML = `${item.name}`;
+                btn.onclick = function() {
+                    input.value = item.icon;
+                    preview.innerHTML = `<span class="text-primary fw-bold">${item.icon.toUpperCase()}</span>`;
+                };
+                suggestionsDiv.appendChild(btn);
+            });
+            
+            input.parentNode.parentNode.appendChild(suggestionsDiv);
+        }
+    }
+    
+    // Add suggestions to both modals
+    addIconSuggestions('vehicleIcon', 'iconPreview');
+    addIconSuggestions('edit_vehicleIcon', 'editIconPreview');
+});
+
+// Delete vehicle type
+function deleteVehicleType(typeId, typeName) {
+    if (confirm(`Are you sure you want to delete "${typeName}"? This action cannot be undone and may affect existing vehicles using this type.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/vehicle-types/${typeId}/delete/`;
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

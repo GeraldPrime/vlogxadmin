@@ -1,0 +1,544 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <div class="d-flex gap-2">
+                                <div class="btn-group">
+                                    <a href="{% url 'orders_management' %}" class="btn {% if not status_filter %}btn-primary{% else %}btn-light{% endif %}">All Orders</a>
+                                    <a href="{% url 'orders_management' %}?status=pending" class="btn {% if status_filter == 'pending' %}btn-primary{% else %}btn-light{% endif %}">Pending</a>
+                                    <a href="{% url 'orders_management' %}?status=accepted" class="btn {% if status_filter == 'accepted' %}btn-primary{% else %}btn-light{% endif %}">Accepted</a>
+                                    <a href="{% url 'orders_management' %}?status=picked_up" class="btn {% if status_filter == 'picked_up' %}btn-primary{% else %}btn-light{% endif %}">Picked Up</a>
+                                    <a href="{% url 'orders_management' %}?status=ended" class="btn {% if status_filter == 'ended' %}btn-primary{% else %}btn-light{% endif %}">Completed</a>
+                                    <a href="{% url 'orders_management' %}?status=cancelled" class="btn {% if status_filter == 'cancelled' %}btn-primary{% else %}btn-light{% endif %}">Cancelled</a>
+                                    <a href="{% url 'orders_management' %}?status=declined" class="btn {% if status_filter == 'declined' %}btn-primary{% else %}btn-light{% endif %}">Declined</a>
+                                </div>
+                                <button class="btn btn-outline-success" onclick="refreshOrders()">
+                                    <i class="ri-refresh-line me-1"></i> Refresh
+                                </button>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                                    <label class="form-check-label" for="autoRefresh">
+                                        Auto Refresh
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <h4 class="page-title">
+                            Orders Management {% if status_filter %}- {{ status_filter|title }} Orders{% endif %}
+                            <span class="badge bg-primary ms-2" id="orderCount">{{ trips|length }}</span>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="text-white">{{ trips|length }}</h4>
+                                    <p class="mb-0">Total Orders</p>
+                                </div>
+                                <i class="ri-shopping-bag-3-line fs-24"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="text-white">{{ pending_count|default:"0" }}</h4>
+                                    <p class="mb-0">Pending Orders</p>
+                                </div>
+                                <i class="ri-time-line fs-24"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="text-white">{{ completed_count|default:"0" }}</h4>
+                                    <p class="mb-0">Completed</p>
+                                </div>
+                                <i class="ri-check-line fs-24"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="text-white">₦{{ total_revenue|default:"0" }}</h4>
+                                    <p class="mb-0">Total Revenue</p>
+                                </div>
+                                <i class="ri-money-dollar-circle-line fs-24"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <!-- Search and Filter Bar -->
+                            <div class="row mb-3">
+                                <div class="col-md-4">
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="ri-search-line"></i></span>
+                                        <input type="text" class="form-control" id="searchOrders" placeholder="Search orders...">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" id="sortBy">
+                                        <option value="date">Sort by Date</option>
+                                        <option value="amount">Sort by Amount</option>
+                                        <option value="status">Sort by Status</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <select class="form-select" id="sortOrder">
+                                        <option value="desc">Newest First</option>
+                                        <option value="asc">Oldest First</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                                        <i class="ri-refresh-line me-1"></i> Clear
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-centered table-nowrap table-hover mb-0" id="ordersTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Order ID</th>
+                                            <th>Customer</th>
+                                            <th>Driver</th>
+                                            <th>Pickup</th>
+                                            <th>Dropoff</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if trips %}
+                                            {% for trip in trips %}
+                                            <tr data-status="{{ trip.status|default:'unknown' }}" data-amount="{{ trip.deliveryAmount|default:0 }}" data-date="{{ trip.dateCreated|date:'Y-m-d H:i:s' }}">
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-xs me-2">
+                                                            <span class="avatar-title rounded-circle bg-primary text-white">
+                                                                {{ trip.orderID|slice:":2"|upper|default:trip.id|slice:":2"|upper }}
+                                                            </span>
+                                                        </div>
+                                                        <strong>{{ trip.orderID|truncatechars:8|default:trip.id|truncatechars:8 }}</strong>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    {% if trip.customer_name %}
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar-xs me-2">
+                                                                <span class="avatar-title rounded-circle bg-info text-white">
+                                                                    {{ trip.customer_name|first|default:"U" }}
+                                                                </span>
+                                                            </div>
+                                                            <span>{{ trip.customer_name }}</span>
+                                                        </div>
+                                                    {% elif trip.recipientName %}
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar-xs me-2">
+                                                                <span class="avatar-title rounded-circle bg-info text-white">
+                                                                    {{ trip.recipientName|first|default:"U" }}
+                                                                </span>
+                                                            </div>
+                                                            <span>{{ trip.recipientName }}</span>
+                                                        </div>
+                                                    {% elif trip.userName %}
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar-xs me-2">
+                                                                <span class="avatar-title rounded-circle bg-info text-white">
+                                                                    {{ trip.userName|first|default:"U" }}
+                                                                </span>
+                                                            </div>
+                                                            <span>{{ trip.userName }}</span>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">Unknown</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if trip.driver_name %}
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar-xs me-2">
+                                                                <span class="avatar-title rounded-circle bg-success text-white">
+                                                                    {{ trip.driver_name|first|default:"D" }}
+                                                                </span>
+                                                            </div>
+                                                            <a href="{% url 'driver_detail' trip.driverID %}" class="text-decoration-none text-success">
+                                                                {{ trip.driver_name }}
+                                                            </a>
+                                                        </div>
+                                                    {% elif trip.driverID %}
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar-xs me-2">
+                                                                <span class="avatar-title rounded-circle bg-warning text-white">
+                                                                    D
+                                                                </span>
+                                                            </div>
+                                                            <a href="{% url 'driver_detail' trip.driverID %}" class="text-decoration-none text-warning">
+                                                                Driver ID: {{ trip.driverID|truncatechars:8 }}
+                                                            </a>
+                                                        </div>
+                                                    {% else %}
+                                                        <span class="text-muted">Unassigned</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="ri-map-pin-line text-primary me-1"></i>
+                                                        <span data-bs-toggle="tooltip" title="{{ trip.pickupLocation|default:'N/A' }}">
+                                                            {{ trip.pickupLocation|truncatechars:20|default:"N/A" }}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="ri-flag-line text-success me-1"></i>
+                                                        <span data-bs-toggle="tooltip" title="{{ trip.dropOffLocation|default:'N/A' }}">
+                                                            {{ trip.dropOffLocation|truncatechars:20|default:"N/A" }}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-semibold">₦{{ trip.deliveryAmount|floatformat:2|default:"0.00" }}</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge 
+                                                        {% if trip.status == 'pending' %}bg-warning text-dark
+                                                        {% elif trip.status == 'accepted' %}bg-info
+                                                        {% elif trip.status == 'picked_up' %}bg-primary
+                                                        {% elif trip.status == 'ended' %}bg-success
+                                                        {% elif trip.status == 'cancelled' %}bg-danger
+                                                        {% elif trip.status == 'declined' %}bg-secondary
+                                                        {% elif trip.status == 'in_transit' or trip.status == 'on_the_way' %}bg-purple
+                                                        {% else %}bg-light text-dark{% endif %}">
+                                                        {% if trip.status == 'ended' %}
+                                                            Completed
+                                                        {% elif trip.status == 'picked_up' %}
+                                                            Picked Up
+                                                        {% elif trip.status == 'in_transit' or trip.status == 'on_the_way' %}
+                                                            In Transit
+                                                        {% else %}
+                                                            {{ trip.status|default:"Unknown"|title }}
+                                                        {% endif %}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex flex-column">
+                                                        <span class="fw-semibold">{{ trip.dateCreated|date:"M d, Y" }}</span>
+                                                        <small class="text-muted">{{ trip.dateCreated|date:"H:i" }}</small>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="{% url 'order_detail' trip.id %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="View Details">
+                                                            <i class="ri-eye-line"></i>
+                                                        </a>
+                                                        {% if trip.status == 'pending' %}
+                                                            <button class="btn btn-sm btn-outline-success" onclick="updateOrderStatus('{{ trip.id }}', 'accepted')" data-bs-toggle="tooltip" title="Accept Order">
+                                                                <i class="ri-check-line"></i>
+                                                            </button>
+                                                        {% endif %}
+                                                        {% if trip.status != 'ended' and trip.status != 'cancelled' %}
+                                                            <button class="btn btn-sm btn-outline-danger" onclick="updateOrderStatus('{{ trip.id }}', 'cancelled')" data-bs-toggle="tooltip" title="Cancel Order">
+                                                                <i class="ri-close-line"></i>
+                                                            </button>
+                                                        {% endif %}
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="9" class="text-center py-4">
+                                                    <div class="text-center">
+                                                        <i class="ri-shopping-bag-3-line fs-48 text-muted mb-3"></i>
+                                                        <h5>No orders found</h5>
+                                                        <p class="text-muted">No orders match your current filter criteria.</p>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+.badge.bg-warning.text-dark {
+    color: #000 !important;
+}
+.badge.bg-light.text-dark {
+    background-color: #f8f9fa !important;
+    color: #000 !important;
+    border: 1px solid #dee2e6;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let autoRefreshInterval;
+let isAutoRefreshEnabled = true;
+
+// Initialize tooltips
+document.addEventListener('DOMContentLoaded', function() {
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Initialize auto-refresh
+    startAutoRefresh();
+    
+    // Setup search functionality
+    setupSearch();
+    
+    // Setup sorting
+    setupSorting();
+});
+
+// Auto-refresh functionality
+function startAutoRefresh() {
+    if (isAutoRefreshEnabled) {
+        autoRefreshInterval = setInterval(function() {
+            refreshOrders();
+        }, 30000); // Refresh every 30 seconds
+    }
+}
+
+function stopAutoRefresh() {
+    if (autoRefreshInterval) {
+        clearInterval(autoRefreshInterval);
+    }
+}
+
+// Toggle auto-refresh
+document.getElementById('autoRefresh').addEventListener('change', function() {
+    isAutoRefreshEnabled = this.checked;
+    if (isAutoRefreshEnabled) {
+        startAutoRefresh();
+    } else {
+        stopAutoRefresh();
+    }
+});
+
+// Refresh orders function
+function refreshOrders() {
+    // Show loading indicator
+    const refreshBtn = document.querySelector('[onclick="refreshOrders()"]');
+    const originalText = refreshBtn.innerHTML;
+    refreshBtn.innerHTML = '<i class="ri-loader-4-line me-1"></i> Refreshing...';
+    refreshBtn.disabled = true;
+    
+    // Reload the page
+    location.reload();
+}
+
+// Search functionality
+function setupSearch() {
+    const searchInput = document.getElementById('searchOrders');
+    searchInput.addEventListener('input', function() {
+        filterOrders();
+    });
+}
+
+function filterOrders() {
+    const searchTerm = document.getElementById('searchOrders').value.toLowerCase();
+    const table = document.getElementById('ordersTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        const text = row.textContent.toLowerCase();
+        
+        if (text.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    }
+    
+    updateOrderCount();
+}
+
+// Sorting functionality
+function setupSorting() {
+    const sortBy = document.getElementById('sortBy');
+    const sortOrder = document.getElementById('sortOrder');
+    
+    sortBy.addEventListener('change', sortOrders);
+    sortOrder.addEventListener('change', sortOrders);
+}
+
+function sortOrders() {
+    const table = document.getElementById('ordersTable');
+    const tbody = table.getElementsByTagName('tbody')[0];
+    const rows = Array.from(tbody.getElementsByTagName('tr'));
+    const sortBy = document.getElementById('sortBy').value;
+    const sortOrder = document.getElementById('sortOrder').value;
+    
+    rows.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch(sortBy) {
+            case 'date':
+                aValue = new Date(a.dataset.date);
+                bValue = new Date(b.dataset.date);
+                break;
+            case 'amount':
+                aValue = parseFloat(a.dataset.amount) || 0;
+                bValue = parseFloat(b.dataset.amount) || 0;
+                break;
+            case 'status':
+                aValue = a.dataset.status;
+                bValue = b.dataset.status;
+                break;
+            default:
+                return 0;
+        }
+        
+        if (sortOrder === 'asc') {
+            return aValue > bValue ? 1 : -1;
+        } else {
+            return aValue < bValue ? 1 : -1;
+        }
+    });
+    
+    // Re-append sorted rows
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+// Clear filters
+function clearFilters() {
+    document.getElementById('searchOrders').value = '';
+    document.getElementById('sortBy').value = 'date';
+    document.getElementById('sortOrder').value = 'desc';
+    
+    // Show all rows
+    const table = document.getElementById('ordersTable');
+    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        rows[i].style.display = '';
+    }
+    
+    updateOrderCount();
+}
+
+// Update order count
+function updateOrderCount() {
+    const table = document.getElementById('ordersTable');
+    const visibleRows = Array.from(table.getElementsByTagName('tbody')[0].getElementsByTagName('tr'))
+        .filter(row => row.style.display !== 'none');
+    
+    document.getElementById('orderCount').textContent = visibleRows.length;
+}
+
+// Update order status
+function updateOrderStatus(orderId, newStatus) {
+    if (confirm(`Are you sure you want to ${newStatus} this order?`)) {
+        fetch(`/orders/${orderId}/update-status/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `status=${newStatus}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Show success message
+                showNotification('Order status updated successfully', 'success');
+                // Refresh the page
+                location.reload();
+            } else {
+                showNotification('Failed to update order status', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('An error occurred while updating order status', 'error');
+        });
+    }
+}
+
+// Show notification
+function showNotification(message, type) {
+    // Create notification element
+    const notification = document.createElement('div');
+    notification.className = `alert alert-${type === 'success' ? 'success' : 'danger'} alert-dismissible fade show position-fixed`;
+    notification.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    notification.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 5000);
+}
+
+// Get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

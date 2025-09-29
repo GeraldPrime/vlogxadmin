@@ -1,312 +1,992 @@
 
 
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
-    <style>
-        .status-toggle-card {
-            background: linear-gradient(135deg, #f8f9fa, #e9ecef);
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-        
-        .status-toggle-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
+<style>
+    .status-toggle-card {
+        background: #fff;
+        border-radius: 8px;
+        color: inherit;
+        box-shadow: none;
+        border: 1px solid #e5eaef;
+    }
 
-        .document-image,
-        .vehicle-image {
-            max-width: 150px; /* Standardized size for all images */
-            max-height: 150px; /* Standardized height */
-            height: auto;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            margin: 5px;
-            object-fit: contain; /* Ensures images fit without distortion */
-        }
+    .form-check-input:checked {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
 
-        .vehicle-images-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
+    .document-image,
+    .vehicle-image {
+        max-width: 150px;
+        max-height: 150px;
+        height: auto;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        margin: 5px;
+        object-fit: contain;
+    }
 
-        .vehicle-images-row .image-container {
-            flex: 0 0 150px; /* Fixed width for each image container */
-            text-align: center;
-        }
+    .vehicle-images-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 15px;
+    }
 
-        .vehicle-images-row .image-label {
-            font-size: 12px;
-            font-weight: bold;
-            margin-top: 5px;
-            display: block;
-        }
+    .vehicle-images-row .image-container {
+        flex: 0 0 150px;
+        text-align: center;
+    }
 
-        .vehicle-images-row img {
-            width: 150px; /* Fixed width for each image */
-            height: 150px; /* Fixed height to match max-height */
-        }
-    </style>
+    .vehicle-images-row .image-label {
+        font-size: 12px;
+        font-weight: bold;
+        margin-top: 5px;
+        display: block;
+    }
 
-    <div class="content-page">
-        <div class="content">
-            <div class="container-fluid">
-                <div class="row">
-                    <div class="col-sm-12">
-                        <div class="profile-bg-picture" style="background-image:url('/static/images/bg-profile.jpg')">
-                            <span class="picture-bg-overlay"></span>
-                        </div>
-                        <div class="profile-user-box">
-                            <div class="row">
-                                <div class="col-sm-6">
-                                    <div class="profile-user-img">
-                                        <img src="/static/images/users/avatar-1.jpg" alt="Driver avatar" class="avatar-lg rounded-circle">
-                                    </div>
-                                    <h4 class="mt-4 fs-17 ellipsis">
-                                        {{ driver.firstName|default:"N/A" }} {{ driver.lastName|default:"" }}
-                                    </h4>
-                                    <p class="text-muted mb-0"><small>{{ driver.address|default:"N/A" }}, {{ driver.country|default:"N/A" }}</small></p>
-                                    <p class="text-muted mb-0"><small>Date Joined: {{ driver.dateCreated|default:"Unknown" }}</small></p>
-                                    <p class="text-muted mb-0"><small>Last Updated: {{ driver.dateLastModified|default:"Unknown" }}</small></p>
-                                </div>
-                                <div class="col-sm-6">
-                                    <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
-                                        <a href="{% url 'drivers_management' %}" class="btn btn-soft-primary">
-                                            <i class="ri-arrow-left-line me-1"></i> Back to List
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+    .vehicle-images-row img {
+        width: 150px;
+        height: 150px;
+    }
+</style>
+
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="profile-bg-picture" style="background-image: url('/static/images/bg-profile.jpg');">
+                        <span class="picture-bg-overlay"></span>
                     </div>
-                </div>
-
-                <div class="row mb-4">
-                    <div class="col-12">
-                        <div class="status-toggle-card p-4">
-                            <div class="row align-items-center">
-                                <div class="col-md-8">
-                                    <h5 class="mb-2">
-                                        <i class="ri-user-settings-line me-2"></i>
-                                        Driver Approval Status
-                                    </h5>
-                                    <p class="text-muted mb-0">
-                                        Current Status: 
-                                        {% if driver.isApproved %}
-                                            <span class="badge bg-success ms-1">Approved</span>
-                                        {% else %}
-                                            <span class="badge bg-warning ms-1">Pending</span>
-                                        {% endif %}
-                                    </p>
-                                    <p class="text-muted mb-0">
-                                        Online Status: 
-                                        {% if driver.isDriverOnline %}
-                                            <span class="badge bg-success ms-1">Online</span>
-                                        {% else %}
-                                            <span class="badge bg-secondary ms-1">Offline</span>
-                                        {% endif %}
-                                    </p>
+                    <div class="profile-user-box">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="profile-user-img">
+                                    <img src="/static/images/users/avatar-1.jpg" alt="Driver avatar" class="avatar-lg rounded-circle" />
                                 </div>
-                                <div class="col-md-4 text-end">
-                                    <div class="form-check form-switch">
-                                        <input class="form-check-input approval-switch" 
-                                               type="checkbox" 
-                                               data-driver-id="{{ driver.id }}"
-                                               {% if driver.isApproved %}checked{% endif %}>
-                                        <label class="form-check-label">
-                                            Toggle Approval
-                                        </label>
-                                    </div>
-                                </div>
+                                <h4 class="mt-4 fs-17 ellipsis">
+                                    {{ driver.firstName|default:"N/A" }} {{ driver.lastName|default:"" }}
+                                </h4>
+                                <p class="text-muted mb-0">
+                                    <small>{{ driver.address|default:"N/A" }}, {{ driver.country|default:"N/A" }}</small>
+                                </p>
+                                <p class="text-muted mb-0">
+                                    <small>Date Joined: {{ driver.dateCreated|default:"Unknown" }}</small>
+                                </p>
+                                <p class="text-muted mb-0">
+                                    <small>Last Updated: {{ driver.dateLastModified|default:"Unknown" }}</small>
+                                </p>
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="row">
-                    <div class="col-sm-12">
-                        <div class="card">
-                            <div class="card-body">
-                                <ul class="nav nav-underline nav-justified gap-0">
-                                    <li class="nav-item"><a class="nav-link active">Driver Details</a></li>
-                                </ul>
-
-                                <div class="p-4">
-                                    <h5 class="fs-17 text-dark">Contact Information</h5>
-                                    <table class="table table-condensed mb-4 border-top">
-                                        <tbody>
-                                            <tr><th>Email</th><td>{{ driver.email|default:"N/A" }}</td></tr>
-                                            <tr><th>Phone</th><td>{{ driver.phoneNumber|default:"N/A" }}</td></tr>
-                                            <tr><th>Address</th><td>{{ driver.address|default:"N/A" }}</td></tr>
-                                            <tr><th>Country</th><td>{{ driver.country|default:"N/A" }}</td></tr>
-                                        </tbody>
-                                    </table>
-
-                                    <h5 class="fs-17 text-dark">Documents</h5>
-                                    {% if driver_documents %}
-                                        <div class="row">
-                                            {% if driver_documents.idFront %}
-                                                <div class="col-md-6">
-                                                    <h6>ID Front</h6>
-                                                    <img src="{{ driver_documents.idFront }}" alt="ID Front" class="document-image">
-                                                </div>
-                                            {% endif %}
-                                            {% if driver_documents.idBack %}
-                                                <div class="col-md-6">
-                                                    <h6>ID Back</h6>
-                                                    <img src="{{ driver_documents.idBack }}" alt="ID Back" class="document-image">
-                                                </div>
-                                            {% endif %}
-                                            {% if driver_documents.licenseFront %}
-                                                <div class="col-md-6">
-                                                    <h6>License Front</h6>
-                                                    <img src="{{ driver_documents.licenseFront }}" alt="License Front" class="document-image">
-                                                </div>
-                                            {% endif %}
-                                            {% if driver_documents.licenseBack %}
-                                                <div class="col-md-6">
-                                                    <h6>License Back</h6>
-                                                    <img src="{{ driver_documents.licenseBack }}" alt="License Back" class="document-image">
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                    {% else %}
-                                        <p class="text-muted">No documents submitted.</p>
-                                    {% endif %}
-
-                                    <h5 class="fs-17 text-dark mt-4">Vehicle Information</h5>
-                                    {% if vehicle %}
-                                        <table class="table table-condensed mb-4 border-top">
-                                            <tbody>
-                                                <tr><th>Brand</th><td>{{ vehicle.carBrand|default:"N/A" }}</td></tr>
-                                                <tr><th>Model</th><td>{{ vehicle.carModel|default:"N/A" }}</td></tr>
-                                                <tr><th>Color</th><td>{{ vehicle.carColor|default:"N/A" }}</td></tr>
-                                                <tr><th>Plate Number</th><td>{{ vehicle.carPlateNum|default:"N/A" }}</td></tr>
-                                                <tr><th>Type</th><td>{{ vehicle.carType|default:"N/A" }}</td></tr>
-                                                <tr><th>Year</th><td>{{ vehicle.carYear|default:"N/A" }}</td></tr>
-                                                <tr><th>Approved</th><td>{% if vehicle.isApproved %}Yes{% else %}No{% endif %}</td></tr>
-                                            </tbody>
-                                        </table>
-                                        <h6>Vehicle Documents</h6>
-                                        <div class="vehicle-images-row">
-                                            {% if vehicle.vehicleDocument.carFrontImage %}
-                                                <div class="image-container">
-                                                    <img src="{{ vehicle.vehicleDocument.carFrontImage }}" alt="Car Front" class="vehicle-image">
-                                                    <span class="image-label">Car Front</span>
-                                                </div>
-                                            {% endif %}
-                                            {% if vehicle.vehicleDocument.carBackImage %}
-                                                <div class="image-container">
-                                                    <img src="{{ vehicle.vehicleDocument.carBackImage }}" alt="Car Back" class="vehicle-image">
-                                                    <span class="image-label">Car Back</span>
-                                                </div>
-                                            {% endif %}
-                                            {% if vehicle.vehicleDocument.carInsuranceImage %}
-                                                <div class="image-container">
-                                                    <img src="{{ vehicle.vehicleDocument.carInsuranceImage }}" alt="Insurance" class="vehicle-image">
-                                                    <span class="image-label">Insurance</span>
-                                                </div>
-                                            {% endif %}
-                                            {% if vehicle.vehicleDocument.carRegistrationImage %}
-                                                <div class="image-container">
-                                                    <img src="{{ vehicle.vehicleDocument.carRegistrationImage }}" alt="Registration" class="vehicle-image">
-                                                    <span class="image-label">Registration</span>
-                                                </div>
-                                            {% endif %}
-                                            {% if vehicle.vehicleDocument.carRoadWorthinessImage %}
-                                                <div class="image-container">
-                                                    <img src="{{ vehicle.vehicleDocument.carRoadWorthinessImage }}" alt="Road Worthiness" class="vehicle-image">
-                                                    <span class="image-label">Road Worthiness</span>
-                                                </div>
-                                            {% endif %}
-                                        </div>
-                                        <div class="mt-3">
-                                            <div class="form-check form-switch">
-                                                <input class="form-check-input vehicle-approval-switch" 
-                                                       type="checkbox" 
-                                                       data-vehicle-id="{{ vehicle.id }}"
-                                                       {% if vehicle.isApproved %}checked{% endif %}>
-                                                <label class="form-check-label">
-                                                    Toggle Vehicle Approval
-                                                </label>
-                                            </div>
-                                        </div>
-                                    {% else %}
-                                        <p class="text-muted">No vehicle submitted for approval.</p>
-                                    {% endif %}
+                            <div class="col-sm-6">
+                                <div class="d-flex justify-content-end align-items-center gap-2 flex-wrap">
+                                    <a href="{% url 'drivers_management' %}" class="btn btn-soft-primary">
+                                        <i class="ri-arrow-left-line me-1"></i>
+                                        Back to List
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+
+            <!-- Live Map Tracking -->
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Live Driver Tracking</h4>
+                            <div id="driver-map" style="width: 100%; height: 380px; border-radius: 8px; overflow: hidden;"></div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <div class="p-2 border rounded">
+                                        <h6 class="mb-2">Current Status</h6>
+                                        <div class="small text-muted" id="live-status">Loading...</div>
+                                        <div class="small" id="live-location">Lat: -, Lng: -</div>
+                                        <div class="small" id="live-updated">Updated: -</div>
+                                        <div class="small" id="live-address">Address: -</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="p-2 border rounded">
+                                        <h6 class="mb-2">Active Order</h6>
+                                        <div class="small" id="live-order">No active order</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Driver Stats</h5>
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="mt-3 mb-3">
+                                        <h3>{{ completed_trips_count }}</h3>
+                                        <p class="mb-0 text-muted">Trips</p>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="mt-3 mb-3">
+                                        <h3>{{ avg_rating|floatformat:1 }}</h3>
+                                        <p class="mb-0 text-muted">Rating</p>
+                                    </div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="mt-3 mb-3">
+                                        <h3>₦{{ earnings_info.total_earnings|default:"0.00"|floatformat:2 }}</h3>
+                                        <p class="mb-0 text-muted">Earned</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-8">
+                    <div class="status-toggle-card p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <h5 class="mb-2">
+                                    <i class="ri-user-settings-line me-2"></i>
+                                    Driver Approval Status
+                                </h5>
+                                <p class="text-muted mb-0">
+                                    Current Status: 
+                                    {% if driver.isApproved %}
+                                        <span class="badge bg-success ms-1">Approved</span>
+                                    {% else %}
+                                        <span class="badge bg-warning ms-1">Pending</span>
+                                    {% endif %}
+                                </p>
+                                <p class="text-muted mb-0">
+                                    Online Status: 
+                                    {% if driver.isDriverOnline %}
+                                        <span class="badge bg-success ms-1">Online</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary ms-1">Offline</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="col-md-4 text-end">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input approval-switch" type="checkbox" data-driver-id="{{ driver.id }}" {% if driver.isApproved %}checked{% endif %} />
+                                    <label class="form-check-label">Toggle Approval</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-sm-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <ul class="nav nav-underline nav-justified gap-0">
+                                <li class="nav-item">
+                                    <a class="nav-link active">Driver Details</a>
+                                </li>
+                            </ul>
+
+                            <div class="p-4">
+                                <h5 class="fs-17 text-dark">Contact Information</h5>
+                                <table class="table table-condensed mb-4 border-top">
+                                    <tbody>
+                                        <tr>
+                                            <th>Email</th>
+                                            <td>{{ driver.email|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Phone</th>
+                                            <td>{{ driver.phoneNumber|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Address</th>
+                                            <td>{{ driver.address|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th>Country</th>
+                                            <td>{{ driver.country|default:"N/A" }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <h5 class="fs-17 text-dark">Documents</h5>
+                                {% if driver_documents %}
+                                    <div class="row">
+                                        {% if driver_documents.idFront %}
+                                            <div class="col-md-6">
+                                                <h6>ID Front</h6>
+                                                <img src="{{ driver_documents.idFront }}" alt="ID Front" class="document-image" />
+                                            </div>
+                                        {% endif %}
+                                        {% if driver_documents.idBack %}
+                                            <div class="col-md-6">
+                                                <h6>ID Back</h6>
+                                                <img src="{{ driver_documents.idBack }}" alt="ID Back" class="document-image" />
+                                            </div>
+                                        {% endif %}
+                                        {% if driver_documents.licenseFront %}
+                                            <div class="col-md-6">
+                                                <h6>License Front</h6>
+                                                <img src="{{ driver_documents.licenseFront }}" alt="License Front" class="document-image" />
+                                            </div>
+                                        {% endif %}
+                                        {% if driver_documents.licenseBack %}
+                                            <div class="col-md-6">
+                                                <h6>License Back</h6>
+                                                <img src="{{ driver_documents.licenseBack }}" alt="License Back" class="document-image" />
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">No documents submitted.</p>
+                                {% endif %}
+
+                                <!-- Trips Section -->
+                                <h5 class="fs-17 text-dark mt-4">Trip History</h5>
+                                <ul class="nav nav-tabs nav-bordered mb-3">
+                                    <li class="nav-item">
+                                        <a href="#completed-trips" data-bs-toggle="tab" aria-expanded="true" class="nav-link active">
+                                            Completed ({{ completed_trips|length|default:"0" }})
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="#ongoing-trips" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
+                                            Ongoing ({{ ongoing_trips|length|default:"0" }})
+                                        </a>
+                                    </li>
+                                    <li class="nav-item">
+                                        <a href="#cancelled-trips" data-bs-toggle="tab" aria-expanded="false" class="nav-link">
+                                            Cancelled ({{ cancelled_trips|length|default:"0" }})
+                                        </a>
+                                    </li>
+                                </ul>
+
+                                <div class="tab-content">
+                                    <div class="tab-pane show active" id="completed-trips">
+                                        {% if completed_trips %}
+                                            <div class="table-responsive">
+                                                <table class="table table-centered table-nowrap table-hover mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Trip ID</th>
+                                                            <th>Date</th>
+                                                            <th>Customer</th>
+                                                            <th>From</th>
+                                                            <th>To</th>
+                                                            <th>Amount</th>
+                                                            <th>Payment</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for trip in completed_trips %}
+                                                            <tr>
+                                                                <td>{{ trip.id|truncatechars:8 }}</td>
+                                                                <td>{{ trip.dateCreated }}</td>
+                                                                <td>{{ trip.customerName|default:"Unknown" }}</td>
+                                                                <td>{{ trip.pickupAddress|truncatechars:20 }}</td>
+                                                                <td>{{ trip.destinationAddress|truncatechars:20 }}</td>
+                                                                <td>₦{{ trip.deliveryAmount|default:"0.00" }}</td>
+                                                                <td>
+                                                                    <span class="badge {% if trip.isPaid %}bg-success{% else %}bg-warning{% endif %}">
+                                                                        {% if trip.isPaid %}Paid{% else %}Pending{% endif %}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-info">No completed trips found.</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="tab-pane" id="ongoing-trips">
+                                        {% if ongoing_trips %}
+                                            <div class="table-responsive">
+                                                <table class="table table-centered table-nowrap table-hover mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Trip ID</th>
+                                                            <th>Date</th>
+                                                            <th>Customer</th>
+                                                            <th>From</th>
+                                                            <th>To</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for trip in ongoing_trips %}
+                                                            <tr>
+                                                                <td>{{ trip.id|truncatechars:8 }}</td>
+                                                                <td>{{ trip.dateCreated }}</td>
+                                                                <td>{{ trip.customerName|default:"Unknown" }}</td>
+                                                                <td>{{ trip.pickupAddress|truncatechars:20 }}</td>
+                                                                <td>{{ trip.destinationAddress|truncatechars:20 }}</td>
+                                                                <td>
+                                                                    <span class="badge bg-info">{{ trip.status|title }}</span>
+                                                                </td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-info">No ongoing trips found.</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="tab-pane" id="cancelled-trips">
+                                        {% if cancelled_trips %}
+                                            <div class="table-responsive">
+                                                <table class="table table-centered table-nowrap table-hover mb-0">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Trip ID</th>
+                                                            <th>Date</th>
+                                                            <th>Customer</th>
+                                                            <th>From</th>
+                                                            <th>To</th>
+                                                            <th>Reason</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {% for trip in cancelled_trips %}
+                                                            <tr>
+                                                                <td>{{ trip.id|truncatechars:8 }}</td>
+                                                                <td>{{ trip.dateCreated }}</td>
+                                                                <td>{{ trip.customerName|default:"Unknown" }}</td>
+                                                                <td>{{ trip.pickupAddress|truncatechars:20 }}</td>
+                                                                <td>{{ trip.destinationAddress|truncatechars:20 }}</td>
+                                                                <td>{{ trip.cancelReason|default:"Not specified"|truncatechars:30 }}</td>
+                                                            </tr>
+                                                        {% endfor %}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        {% else %}
+                                            <div class="alert alert-info">No cancelled trips found.</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <h5 class="fs-17 text-dark mt-4">Vehicle Information</h5>
+                                {% if vehicle %}
+                                    <table class="table table-condensed mb-4 border-top">
+                                        <tbody>
+                                            <tr>
+                                                <th>Brand</th>
+                                                <td>{{ vehicle.carBrand|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Model</th>
+                                                <td>{{ vehicle.carModel|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Color</th>
+                                                <td>{{ vehicle.carColor|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Plate Number</th>
+                                                <td>{{ vehicle.carPlateNum|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Type</th>
+                                                <td>{{ vehicle.carType|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Year</th>
+                                                <td>{{ vehicle.carYear|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th>Approved</th>
+                                                <td>{% if vehicle.isApproved %}Yes{% else %}No{% endif %}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <h6>Vehicle Documents</h6>
+                                    <div class="vehicle-images-row">
+                                        {% if vehicle.vehicleDocument.carFrontImage %}
+                                            <div class="image-container">
+                                                <img src="{{ vehicle.vehicleDocument.carFrontImage }}" alt="Car Front" class="vehicle-image" />
+                                                <span class="image-label">Car Front</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if vehicle.vehicleDocument.carBackImage %}
+                                            <div class="image-container">
+                                                <img src="{{ vehicle.vehicleDocument.carBackImage }}" alt="Car Back" class="vehicle-image" />
+                                                <span class="image-label">Car Back</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if vehicle.vehicleDocument.carInsuranceImage %}
+                                            <div class="image-container">
+                                                <img src="{{ vehicle.vehicleDocument.carInsuranceImage }}" alt="Insurance" class="vehicle-image" />
+                                                <span class="image-label">Insurance</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if vehicle.vehicleDocument.carRegistrationImage %}
+                                            <div class="image-container">
+                                                <img src="{{ vehicle.vehicleDocument.carRegistrationImage }}" alt="Registration" class="vehicle-image" />
+                                                <span class="image-label">Registration</span>
+                                            </div>
+                                        {% endif %}
+                                        {% if vehicle.vehicleDocument.carRoadWorthinessImage %}
+                                            <div class="image-container">
+                                                <img src="{{ vehicle.vehicleDocument.carRoadWorthinessImage }}" alt="Road Worthiness" class="vehicle-image" />
+                                                <span class="image-label">Road Worthiness</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input vehicle-approval-switch" type="checkbox" data-vehicle-id="{{ vehicle.id }}" {% if vehicle.isApproved %}checked{% endif %} />
+                                            <label class="form-check-label">Toggle Vehicle Approval</label>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <p class="text-muted">No vehicle submitted for approval.</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Ratings Section -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="header-title mb-0">Driver Ratings & Analytics</h4>
+                                {% if rating_analytics and rating_analytics.total_ratings > 0 %}
+                                    <div class="text-end">
+                                        <h5 class="text-primary mb-0">{{ rating_analytics.average_rating|floatformat:1|default:"0.0" }}/5.0</h5>
+                                        <small class="text-muted">{{ rating_analytics.total_ratings|default:"0" }} total ratings</small>
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            {% if rating_analytics and rating_analytics.total_ratings > 0 %}
+                                <!-- Rating Breakdown -->
+                                <div class="row mb-4">
+                                    <div class="col-md-6">
+                                        <h6>Rating Distribution</h6>
+                                        {% with dist=rating_analytics.rating_distribution tb=rating_analytics.threshold_breakdown tr=rating_analytics.total_ratings %}
+                                            {% for item in dist %}
+                                                <div class="d-flex align-items-center mb-2">
+                                                    <span class="me-2">{{ item.label }}★</span>
+                                                    <div class="progress flex-grow-1 me-2" style="height: 8px">
+                                                        <div class="progress-bar" style="width: {% widthratio item.count tr 100 %}%"></div>
+                                                    </div>
+                                                    <span class="text-muted">{{ item.count }}</span>
+                                                </div>
+                                            {% endfor %}
+                                            <hr class="my-2" />
+                                            <h6 class="mt-3">Thresholds</h6>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="me-2">3+ stars</span>
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px">
+                                                    <div class="progress-bar bg-success" style="width: {% widthratio tb.3_plus tr 100 %}%"></div>
+                                                </div>
+                                                <span class="text-muted">{{ tb.3_plus|default:0 }}</span>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="me-2">4+ stars</span>
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px">
+                                                    <div class="progress-bar bg-info" style="width: {% widthratio tb.4_plus tr 100 %}%"></div>
+                                                </div>
+                                                <span class="text-muted">{{ tb.4_plus|default:0 }}</span>
+                                            </div>
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="me-2">4.5+ stars</span>
+                                                <div class="progress flex-grow-1 me-2" style="height: 8px">
+                                                    <div class="progress-bar bg-primary" style="width: {% widthratio tb.4_5_plus tr 100 %}%"></div>
+                                                </div>
+                                                <span class="text-muted">{{ tb.4_5_plus|default:0 }}</span>
+                                            </div>
+                                        {% endwith %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6>Recent Ratings</h6>
+                                        {% for rating in rating_analytics.recent_ratings|slice:":5" %}
+                                            <div class="d-flex align-items-center mb-2 p-2 border rounded">
+                                                <div class="me-3">
+                                                    <span class="text-warning">
+                                                        {% for i in "12345" %}
+                                                            {% if forloop.counter <= rating.rating %}
+                                                                <i class="ri-star-fill"></i>
+                                                            {% elif forloop.counter|add:"-1" < rating.rating and forloop.counter > rating.rating %}
+                                                                <i class="ri-star-half-fill"></i>
+                                                            {% else %}
+                                                                <i class="ri-star-line"></i>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </span>
+                                                </div>
+                                                <div class="flex-grow-1">
+                                                    <small class="text-muted">{{ rating.dateCreated|date:"M d, Y" }}</small>
+                                                    <div class="small">{{ rating.comment|truncatechars:30 }}</div>
+                                                </div>
+                                            </div>
+                                        {% endfor %}
+                                    </div>
+                                </div>
+
+                                <!-- Detailed Ratings Table -->
+                                <div class="table-responsive">
+                                    <table class="table table-centered table-nowrap table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Customer</th>
+                                                <th>Trip ID</th>
+                                                <th>Rating</th>
+                                                <th>Comment</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for rating in ratings %}
+                                                <tr>
+                                                    <td>{{ rating.dateCreated|date:"M d, Y H:i" }}</td>
+                                                    <td>
+                                                        <div class="d-flex align-items-center">
+                                                            <div class="avatar-xs me-2">
+                                                                <span class="avatar-title rounded-circle bg-primary text-white">
+                                                                    {{ rating.customer_name|first|default:"U" }}
+                                                                </span>
+                                                            </div>
+                                                            {{ rating.customer_name|default:"Unknown" }}
+                                                        </div>
+                                                    </td>
+                                                    <td>
+                                                        {% if rating.order_id %}
+                                                            <a href="{% url 'order_detail' rating.order_id %}" class="text-primary" data-bs-toggle="tooltip" title="View Trip Details">
+                                                                {{ rating.order_id|truncatechars:8 }}
+                                                            </a>
+                                                        {% else %}
+                                                            <span class="text-muted">N/A</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        <span class="text-warning">
+                                                            {% for i in "12345" %}
+                                                                {% if forloop.counter <= rating.rating %}
+                                                                    <i class="ri-star-fill"></i>
+                                                                {% elif forloop.counter|add:"-1" < rating.rating and forloop.counter > rating.rating %}
+                                                                    <i class="ri-star-half-fill"></i>
+                                                                {% else %}
+                                                                    <i class="ri-star-line"></i>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </span>
+                                                        <span class="ms-1">{{ rating.rating|floatformat:1 }}/5</span>
+                                                    </td>
+                                                    <td>
+                                                        <span data-bs-toggle="tooltip" title="{{ rating.comment }}">
+                                                            {{ rating.comment|truncatechars:50 }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {% if rating.order_id %}
+                                                            <a href="{% url 'order_detail' rating.order_id %}" class="btn btn-sm btn-outline-primary">
+                                                                <i class="ri-eye-line"></i>
+                                                            </a>
+                                                        {% else %}
+                                                            <button class="btn btn-sm btn-outline-secondary" disabled title="No trip linked">
+                                                                <i class="ri-eye-off-line"></i>
+                                                            </button>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info text-center">
+                                    <i class="ri-star-line fs-48 text-muted mb-3"></i>
+                                    <h5>No ratings yet</h5>
+                                    <p class="mb-0">This driver hasn't received any ratings from customers yet.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enhanced Balance & Earnings Section -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="header-title mb-0">Driver Balance & Earnings</h4>
+                                <div class="text-end">
+                                    <small class="text-muted">Last updated: {{ driver.dateLastModified|date:"M d, Y H:i" }}</small>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                {% comment %} <div class="col-md-3">
+                                    <div class="card bg-primary text-white">
+                                        <div class="card-body text-center">
+                                            <h5 class="mt-0 mb-3 text-white">Current Balance</h5>
+                                            <h2 class="text-white">₦{{ earnings_info.current_balance|default:"0.00"|floatformat:2 }}</h2>
+                                            <small class="text-white-50">Available for withdrawal</small>
+                                        </div>
+                                    </div>
+                                </div> {% endcomment %}
+                                <div class="col-md-3">
+                                    <div class="card bg-success text-white">
+                                        <div class="card-body text-center">
+                                            <h5 class="mt-0 mb-3 text-white">Total Earnings</h5>
+                                            <h2 class="text-white">₦{{ earnings_info.total_earnings|default:"0.00"|floatformat:2 }}</h2>
+                                            <small class="text-white-50">{{ earnings_info.total_trips|default:"0" }} completed trips</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-info text-white">
+                                        <div class="card-body text-center">
+                                            <h5 class="mt-0 mb-3 text-white">Avg per Trip</h5>
+                                            <h2 class="text-white">₦{{ earnings_info.avg_earnings_per_trip|default:"0.00"|floatformat:2 }}</h2>
+                                            <small class="text-white-50">Average earnings</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card bg-warning text-white">
+                                        <div class="card-body text-center">
+                                            <h5 class="mt-0 mb-3 text-white">Pending Amount</h5>
+                                            <h2 class="text-white">₦{{ earnings_info.pending_amount|default:"0.00"|floatformat:2 }}</h2>
+                                            <small class="text-white-50">Awaiting payment</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Earnings Chart Placeholder -->
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <h5>Earnings Overview</h5>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="card border">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">This Month</h6>
+                                                    <h4 class="text-primary">₦{{ earnings_info.total_earnings|default:"0.00"|floatformat:2 }}</h4>
+                                                    <small class="text-muted">From {{ earnings_info.total_trips|default:"0" }} trips</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="card border">
+                                                <div class="card-body">
+                                                    <h6 class="card-title">Performance</h6>
+                                                    <h4 class="text-success">{{ completed_trips_count }} trips</h4>
+                                                    <small class="text-muted">Completed successfully</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Recent Transactions -->
+                            <h5 class="mt-4">Recent Activity</h5>
+                            {% if recent_trips %}
+                                <div class="table-responsive">
+                                    <table class="table table-centered table-nowrap table-hover mb-0">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Trip ID</th>
+                                                <th>Customer</th>
+                                                <th>Amount</th>
+                                                <th>Status</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for trip in recent_trips %}
+                                                <tr>
+                                                    <td>{{ trip.dateCreated|date:"M d, Y H:i" }}</td>
+                                                    <td>
+                                                        {% if trip.id %}
+                                                            <a href="{% url 'order_detail' trip.id %}" class="text-primary">
+                                                                {{ trip.id|truncatechars:8 }}
+                                                            </a>
+                                                        {% else %}
+                                                            <span class="text-muted">N/A</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{{ trip.customerName|default:"Unknown" }}</td>
+                                                    <td>₦{{ trip.deliveryAmount|default:"0.00" }}</td>
+                                                    <td>
+                                                        <span class="badge {% if trip.status == 'completed' %}bg-success {% elif trip.status == 'pending' %}bg-warning {% elif trip.status == 'cancelled' %}bg-danger {% else %}bg-info{% endif %}">
+                                                            {{ trip.status|title }}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        {% if trip.id %}
+                                                            <a href="{% url 'order_detail' trip.id %}" class="btn btn-sm btn-outline-primary">
+                                                                <i class="ri-eye-line"></i>
+                                                            </a>
+                                                        {% else %}
+                                                            <span class="text-muted">-</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">No recent activity found.</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Driver Location Section -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Driver Location</h4>
+
+                            {% if location_info and location_info.latitude != 0.0 %}
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="card border">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Current Location</h6>
+                                                <p class="mb-1">
+                                                    <strong>Latitude:</strong> {{ location_info.latitude|floatformat:6 }}
+                                                </p>
+                                                <p class="mb-1">
+                                                    <strong>Longitude:</strong> {{ location_info.longitude|floatformat:6 }}
+                                                </p>
+                                                {% if location_info.updatedOn %}
+                                                    <p class="mb-0">
+                                                        <strong>Last Updated:</strong> {{ location_info.updatedOn|date:"M d, Y H:i" }}
+                                                    </p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card border">
+                                            <div class="card-body">
+                                                <h6 class="card-title">Map View</h6>
+                                                <div id="map" style="height: 200px; width: 100%; border-radius: 5px; background-color: #f8f9fa; display: flex; align-items: center; justify-content: center;">
+                                                    <span class="text-muted">Map will load here</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info text-center">
+                                    <i class="ri-map-pin-line fs-48 text-muted mb-3"></i>
+                                    <h5>Location not available</h5>
+                                    <p class="mb-0">Driver location data is not currently available.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
-    </div>
 
-    <script>
-        document.querySelector('.approval-switch').addEventListener('change', function() {
-            const driverId = this.getAttribute('data-driver-id');
-            const isApproved = this.checked;
-            
-            fetch('{% url "update_driver_status" %}', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': '{{ csrf_token }}'
-                },
-                body: JSON.stringify({
-                    driver_id: driverId,
-                    status: isApproved
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (!data.success) {
-                    this.checked = !isApproved;
-                    alert('Failed to update status: ' + data.message);
-                }
-            })
-            .catch(error => {
-                this.checked = !isApproved;
-                alert('Error updating status');
-                console.error('Error:', error);
-            });
-        });
-
-        const vehicleSwitch = document.querySelector('.vehicle-approval-switch');
-        if (vehicleSwitch) {
-            vehicleSwitch.addEventListener('change', function() {
-                const vehicleId = this.getAttribute('data-vehicle-id');
+        <script>
+            document.querySelector(".approval-switch").addEventListener("change", function () {
+                const driverId = this.getAttribute("data-driver-id");
                 const isApproved = this.checked;
-                
-                fetch('/ajax/update-vehicle-status/', {
-                    method: 'POST',
+
+                fetch('{% url "update_driver_status" %}', {
+                    method: "POST",
                     headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": "{{ csrf_token }}",
                     },
                     body: JSON.stringify({
-                        vehicle_id: vehicleId,
-                        status: isApproved
-                    })
+                        driver_id: driverId,
+                        status: isApproved,
+                    }),
                 })
-                .then(response => response.json())
-                .then(data => {
+                .then((response) => response.json())
+                .then((data) => {
                     if (!data.success) {
                         this.checked = !isApproved;
-                        alert('Failed to update vehicle status: ' + data.message);
+                        alert("Failed to update status: " + data.message);
                     }
                 })
-                .catch(error => {
+                .catch((error) => {
                     this.checked = !isApproved;
-                    alert('Error updating vehicle status');
-                    console.error('Error:', error);
+                    alert("Error updating status");
+                    console.error("Error:", error);
                 });
             });
-        }
-    </script>
+
+            const vehicleSwitch = document.querySelector(".vehicle-approval-switch");
+            if (vehicleSwitch) {
+                vehicleSwitch.addEventListener("change", function () {
+                    const vehicleId = this.getAttribute("data-vehicle-id");
+                    const isApproved = this.checked;
+
+                    fetch("/ajax/update-vehicle-status/", {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRFToken": "{{ csrf_token }}",
+                        },
+                        body: JSON.stringify({
+                            vehicle_id: vehicleId,
+                            status: isApproved,
+                        }),
+                    })
+                    .then((response) => response.json())
+                    .then((data) => {
+                        if (!data.success) {
+                            this.checked = !isApproved;
+                            alert("Failed to update vehicle status: " + data.message);
+                        }
+                    })
+                    .catch((error) => {
+                        this.checked = !isApproved;
+                        alert("Error updating vehicle status");
+                        console.error("Error:", error);
+                    });
+                });
+            }
+        </script>
+        
+        <!-- Leaflet JS and live polling script -->
+        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        <script>
+            (function() {
+                const driverId = "{{ driver.id }}";
+                const mapEl = document.getElementById('driver-map');
+                if (!mapEl) return;
+
+                const defaultLat = 6.5244;   // Lagos fallback
+                const defaultLng = 3.3792;
+                let map = L.map('driver-map').setView([defaultLat, defaultLng], 12);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    maxZoom: 19,
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+
+                let marker = null;
+                let routeLine = null;
+                let lastGeocodeKey = null; // cache key: `${lat.toFixed(5)},${lng.toFixed(5)}`
+
+                function updateLive() {
+                    fetch(`/api/drivers/${driverId}/live/`, { headers: { 'Cache-Control': 'no-cache' }})
+                        .then(r => r.json())
+                        .then(data => {
+                            if (!data || !data.success) return;
+                            const loc = data.location || {};
+                            const lat = parseFloat(loc.latitude || 0);
+                            const lng = parseFloat(loc.longitude || 0);
+
+                            if (lat && lng) {
+                                const latLng = [lat, lng];
+                                if (!marker) {
+                                    marker = L.marker(latLng).addTo(map);
+                                    map.setView(latLng, 14);
+                                } else {
+                                    marker.setLatLng(latLng);
+                                }
+                            }
+
+                            // Update status panel
+                            const statusEl = document.getElementById('live-status');
+                            const locEl = document.getElementById('live-location');
+                            const updEl = document.getElementById('live-updated');
+                            const addrEl = document.getElementById('live-address');
+                            if (statusEl) statusEl.textContent = data.driver && data.driver.isDriverOnline ? 'Online' : 'Offline';
+                            if (locEl) locEl.textContent = `Lat: ${loc.latitude || '-'}, Lng: ${loc.longitude || '-'}`;
+                            if (updEl) updEl.textContent = `Updated: ${loc.last_updated || '-'}`;
+
+                            // Reverse geocode to street name (OpenStreetMap Nominatim), throttled by coord change
+                            if (addrEl && lat && lng) {
+                                const key = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+                                if (key !== lastGeocodeKey) {
+                                    lastGeocodeKey = key;
+                                    addrEl.textContent = 'Address: resolving...';
+                                    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18`;
+                                    fetch(url, { headers: { 'Accept': 'application/json' }})
+                                        .then(r => r.json())
+                                        .then(j => {
+                                            const name = (j && (j.name || (j.address && (j.address.road || j.address.neighbourhood || j.address.suburb || j.address.village || j.address.town || j.address.city))));
+                                            const display = j && (j.display_name || name) || '-';
+                                            addrEl.textContent = `Address: ${display}`;
+                                        })
+                                        .catch(() => {
+                                            addrEl.textContent = 'Address: -';
+                                        });
+                                }
+                            }
+
+                            // Draw route if active trip present
+                            const trip = data.current_trip;
+                            const orderEl = document.getElementById('live-order');
+                            if (trip && orderEl) {
+                                const pickup = trip.pickupLatLng;
+                                const dropoff = trip.dropOffLatLng;
+                                const orderId = trip.id || trip.orderID || '';
+                                orderEl.innerHTML = orderId ? `Order: <a href="/orders/${orderId}/">${orderId.substring(0,8)}</a> · Status: ${trip.status || 'unknown'} · Amount: ${trip.deliveryAmount || '-'}` : `Status: ${trip.status || 'unknown'} · Amount: ${trip.deliveryAmount || '-'}`;
+
+                                if (pickup && dropoff && pickup.latitude && pickup.longitude && dropoff.latitude && dropoff.longitude) {
+                                    const pts = [
+                                        [pickup.latitude, pickup.longitude],
+                                        [dropoff.latitude, dropoff.longitude]
+                                    ];
+                                    if (routeLine) {
+                                        routeLine.setLatLngs(pts);
+                                    } else {
+                                        routeLine = L.polyline(pts, { color: 'blue', weight: 3, dashArray: '4,6' }).addTo(map);
+                                    }
+                                    const bounds = L.latLngBounds(pts);
+                                    if (marker && lat && lng) bounds.extend([lat, lng]);
+                                    map.fitBounds(bounds.pad(0.2));
+                                }
+                            } else if (orderEl) {
+                                orderEl.textContent = 'No active order';
+                                if (routeLine) {
+                                    map.removeLayer(routeLine);
+                                    routeLine = null;
+                                }
+                            }
+                        })
+                        .catch(() => {});
+                }
+
+                updateLive();
+                setInterval(updateLive, 8000);
+            })();
+        </script>
+    </div>
+</div>
+
 {% endblock %}

@@ -1,0 +1,503 @@
+
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <a href="{% url 'orders_management' %}" class="btn btn-secondary">
+                                <i class="ri-arrow-left-line me-1"></i> Back to Orders
+                            </a>
+                        </div>
+                        <h4 class="page-title">Order Details #{{ trip.orderID|truncatechars:8|default:trip.id|truncatechars:8 }}</h4>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Status Card -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h4 class="header-title">Order Status</h4>
+                                <span class="badge 
+                                    {% if trip.status == 'pending' %}bg-warning text-dark
+                                    {% elif trip.status == 'accepted' %}bg-info
+                                    {% elif trip.status == 'picked_up' %}bg-primary
+                                    {% elif trip.status == 'ended' %}bg-success
+                                    {% elif trip.status == 'cancelled' %}bg-danger
+                                    {% elif trip.status == 'declined' %}bg-secondary
+                                    {% elif trip.status == 'in_transit' or trip.status == 'on_the_way' %}bg-purple
+                                    {% else %}bg-light text-dark{% endif %} p-2">
+                                    {% if trip.status == 'ended' %}
+                                        Completed
+                                    {% elif trip.status == 'picked_up' %}
+                                        Picked Up
+                                    {% elif trip.status == 'in_transit' or trip.status == 'on_the_way' %}
+                                        In Transit
+                                    {% else %}
+                                        {{ trip.status|default:"Unknown"|title }}
+                                    {% endif %}
+                                </span>
+                            </div>
+                            
+                            <form action="{% url 'update_order_status' trip.id %}" method="post" class="row g-3">
+                                {% csrf_token %}
+                                <div class="col-md-8">
+                                    <select class="form-select" name="status" required>
+                                        <option value="">Change Status</option>
+                                        <option value="pending" {% if trip.status == 'pending' %}selected{% endif %}>Pending</option>
+                                        <option value="accepted" {% if trip.status == 'accepted' %}selected{% endif %}>Accepted</option>
+                                        <option value="picked_up" {% if trip.status == 'picked_up' %}selected{% endif %}>Picked Up</option>
+                                        <option value="in_transit" {% if trip.status == 'in_transit' %}selected{% endif %}>In Transit</option>
+                                        <option value="ended" {% if trip.status == 'ended' %}selected{% endif %}>Completed</option>
+                                        <option value="cancelled" {% if trip.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                                        <option value="declined" {% if trip.status == 'declined' %}selected{% endif %}>Declined</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <button type="submit" class="btn btn-primary w-100">Update Status</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Order Details -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Order Information</h4>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <th scope="row" width="30%">Order ID:</th>
+                                            <td>{{ trip.orderID|default:trip.id }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Date Created:</th>
+                                            <td>{{ trip.dateCreated|date:"M d, Y H:i" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Last Updated:</th>
+                                            <td>{{ trip.dateUpdated|date:"M d, Y H:i"|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Amount:</th>
+                                            <td><strong>₦{{ trip.deliveryAmount|floatformat:2|default:"0.00" }}</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Payment Method:</th>
+                                            <td>{{ trip.paymentMethod|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Payment Status:</th>
+                                            <td>
+                                                <span class="badge {% if trip.paymentStatus %}bg-success{% else %}bg-warning text-dark{% endif %}">
+                                                    {% if trip.paymentStatus %}Paid{% else %}Unpaid{% endif %}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Vehicle Type:</th>
+                                            <td>{{ trip.vehicleType|title|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Item Type:</th>
+                                            <td>{{ trip.itemType|default:"N/A" }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Location Information</h4>
+                            <div class="table-responsive">
+                                <table class="table table-sm table-borderless mb-0">
+                                    <tbody>
+                                        <tr>
+                                            <th scope="row" width="30%">Pickup Address:</th>
+                                            <td>{{ trip.pickupLocation|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Pickup Coordinates:</th>
+                                            <td>
+                                                {% if trip.pickupLatLng.latitude and trip.pickupLatLng.longitude %}
+                                                    {{ trip.pickupLatLng.latitude|floatformat:6 }}, {{ trip.pickupLatLng.longitude|floatformat:6 }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Dropoff Address:</th>
+                                            <td>{{ trip.dropOffLocation|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Dropoff Coordinates:</th>
+                                            <td>
+                                                {% if trip.dropOffLatLng.latitude and trip.dropOffLatLng.longitude %}
+                                                    {{ trip.dropOffLatLng.latitude|floatformat:6 }}, {{ trip.dropOffLatLng.longitude|floatformat:6 }}
+                                                {% else %}
+                                                    N/A
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Recipient Name:</th>
+                                            <td>{{ trip.recipientName|default:"N/A" }}</td>
+                                        </tr>
+                                        <tr>
+                                            <th scope="row">Recipient Phone:</th>
+                                            <td>{{ trip.recipientNumber|default:"N/A" }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer and Driver Information -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Customer Information</h4>
+                            {% if trip.customer_name or trip.userName %}
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-sm me-3">
+                                        <span class="avatar-title rounded-circle bg-info text-white fs-18">
+                                            {{ trip.customer_name|first|default:trip.userName|first|default:"U" }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">{{ trip.customer_name|default:trip.userName|default:"Unknown Customer" }}</h5>
+                                        <p class="mb-0 text-muted">{{ trip.userPhone|default:"No phone number" }}</p>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <th scope="row" width="30%">Phone:</th>
+                                                <td>{{ trip.userPhone|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row">User ID:</th>
+                                                <td>{{ trip.userID|default:"N/A" }}</td>
+                                            </tr>
+                                            {% if trip.userID %}
+                                            <tr>
+                                                <td colspan="2">
+                                                    <a href="{% url 'customer_detail' trip.userID %}" class="btn btn-sm btn-info">
+                                                        View Customer Profile
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="ri-user-line fs-48 text-muted mb-3"></i>
+                                    <p class="text-muted">No customer information available</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Driver Information</h4>
+                            {% if trip.driver_name or trip.driverID %}
+                                <div class="d-flex align-items-center mb-3">
+                                    <div class="avatar-sm me-3">
+                                        <span class="avatar-title rounded-circle bg-success text-white fs-18">
+                                            {{ trip.driver_name|first|default:"D" }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <h5 class="mb-1">{{ trip.driver_name|default:"Driver ID: "|add:trip.driverID|truncatechars:20 }}</h5>
+                                        <p class="mb-0 text-muted">
+                                            {% if trip.driverRating %}
+                                                Rating: {{ trip.driverRating|floatformat:1 }}/5.0
+                                            {% else %}
+                                                No rating yet
+                                            {% endif %}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-borderless mb-0">
+                                        <tbody>
+                                            <tr>
+                                                <th scope="row" width="30%">Driver ID:</th>
+                                                <td>{{ trip.driverID|default:"N/A" }}</td>
+                                            </tr>
+                                            <tr>
+                                                <th scope="row">Rating:</th>
+                                                <td>
+                                                    {% if trip.driverRating %}
+                                                        <span class="text-warning">
+                                                            {% for i in "12345" %}
+                                                                {% if forloop.counter <= trip.driverRating %}
+                                                                    <i class="ri-star-fill"></i>
+                                                                {% else %}
+                                                                    <i class="ri-star-line"></i>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        </span>
+                                                        {{ trip.driverRating|floatformat:1 }}
+                                                    {% else %}
+                                                        <span class="text-muted">No rating</span>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% if trip.driverID %}
+                                            <tr>
+                                                <td colspan="2">
+                                                    <a href="{% url 'driver_detail' trip.driverID %}" class="btn btn-sm btn-success">
+                                                        View Driver Profile
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                            {% endif %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="text-center py-4">
+                                    <i class="ri-user-location-line fs-48 text-muted mb-3"></i>
+                                    <p class="text-muted">No driver assigned yet</p>
+                                    <button class="btn btn-outline-primary btn-sm" onclick="assignDriver()">
+                                        Assign Driver
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Images -->
+            {% if trip.imageDelivered or trip.imageSent %}
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Delivery Images</h4>
+                            <div class="row">
+                                {% if trip.imageSent %}
+                                <div class="col-md-6">
+                                    <div class="text-center">
+                                        <h6 class="mb-2">Image Sent</h6>
+                                        <img src="{{ trip.imageSent }}" class="img-fluid rounded" style="max-height: 200px;" alt="Image Sent">
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if trip.imageDelivered %}
+                                <div class="col-md-6">
+                                    <div class="text-center">
+                                        <h6 class="mb-2">Image Delivered</h6>
+                                        <img src="{{ trip.imageDelivered }}" class="img-fluid rounded" style="max-height: 200px;" alt="Image Delivered">
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Order Timeline -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Order Timeline</h4>
+                            <div class="timeline-container">
+                                <div class="timeline-item {% if trip.status == 'pending' %}active{% else %}completed{% endif %}">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <h6>Order Placed</h6>
+                                        <p class="text-muted mb-0">{{ trip.dateCreated|date:"M d, Y H:i" }}</p>
+                                    </div>
+                                </div>
+                                
+                                {% if trip.status != 'pending' %}
+                                <div class="timeline-item {% if trip.status == 'accepted' %}active{% elif trip.status == 'picked_up' or trip.status == 'in_transit' or trip.status == 'ended' %}completed{% endif %}">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <h6>Order Accepted</h6>
+                                        <p class="text-muted mb-0">Driver assigned</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if trip.status == 'picked_up' or trip.status == 'in_transit' or trip.status == 'ended' %}
+                                <div class="timeline-item {% if trip.status == 'picked_up' %}active{% elif trip.status == 'in_transit' or trip.status == 'ended' %}completed{% endif %}">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <h6>Package Picked Up</h6>
+                                        <p class="text-muted mb-0">Driver has collected the item</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if trip.status == 'in_transit' or trip.status == 'ended' %}
+                                <div class="timeline-item {% if trip.status == 'in_transit' %}active{% elif trip.status == 'ended' %}completed{% endif %}">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <h6>In Transit</h6>
+                                        <p class="text-muted mb-0">Package is on the way</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if trip.status == 'ended' %}
+                                <div class="timeline-item completed">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <h6>Delivered</h6>
+                                        <p class="text-muted mb-0">Package successfully delivered</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                
+                                {% if trip.status == 'cancelled' %}
+                                <div class="timeline-item cancelled">
+                                    <div class="timeline-marker"></div>
+                                    <div class="timeline-content">
+                                        <h6>Order Cancelled</h6>
+                                        <p class="text-muted mb-0">{{ trip.dateUpdated|date:"M d, Y H:i"|default:"Unknown" }}</p>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Map View (Placeholder) -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <h4 class="header-title mb-3">Trip Route</h4>
+                            <div id="map" style="height: 400px; background-color: #f5f5f5; display: flex; align-items: center; justify-content: center; border-radius: 8px;">
+                                <div class="text-center">
+                                    <i class="ri-map-pin-line fs-48 text-muted mb-3"></i>
+                                    <p class="text-muted mb-0">Map view will be implemented in future updates</p>
+                                    {% if trip.pickupLatLng.latitude and trip.dropOffLatLng.latitude %}
+                                    <small class="text-muted d-block mt-2">
+                                        Pickup: {{ trip.pickupLatLng.latitude|floatformat:4 }}, {{ trip.pickupLatLng.longitude|floatformat:4 }}<br>
+                                        Dropoff: {{ trip.dropOffLatLng.latitude|floatformat:4 }}, {{ trip.dropOffLatLng.longitude|floatformat:4 }}
+                                    </small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.bg-purple {
+    background-color: #6f42c1 !important;
+}
+
+.timeline-container {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline-container::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e9ecef;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -37px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #e9ecef;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px #e9ecef;
+}
+
+.timeline-item.active .timeline-marker {
+    background: #ffc107;
+    box-shadow: 0 0 0 2px #ffc107;
+}
+
+.timeline-item.completed .timeline-marker {
+    background: #28a745;
+    box-shadow: 0 0 0 2px #28a745;
+}
+
+.timeline-item.cancelled .timeline-marker {
+    background: #dc3545;
+    box-shadow: 0 0 0 2px #dc3545;
+}
+
+.timeline-content h6 {
+    margin-bottom: 5px;
+    font-weight: 600;
+}
+
+.avatar-title.fs-18 {
+    font-size: 18px;
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-refresh the page every 60 seconds to show updated order status
+    setTimeout(function() {
+        location.reload();
+    }, 60000);
+
+    function assignDriver() {
+        // Placeholder for assign driver functionality
+        alert('Driver assignment feature will be implemented soon');
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,294 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPaymentSettingModal">
+                                <i class="ri-add-line me-1"></i> Add Payment Setting
+                            </button>
+                        </div>
+                        <h4 class="page-title">Payment Settings Management</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-centered table-nowrap table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Vehicle Type</th>
+                                            <th>Price per Distance</th>
+                                            <th>Add-on Fee</th>
+                                            <th>Total Base Price</th>
+                                            <th>Created Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if payment_settings %}
+                                            {% for setting in payment_settings %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-xs me-2">
+                                                            <span class="avatar-title rounded-circle bg-info text-white">
+                                                                {{ setting.vehicle_type_name|first|upper|default:setting.vehicleTypeId|first|upper|default:"V" }}
+                                                            </span>
+                                                        </div>
+                                                        <strong>{{ setting.vehicle_type_name|default:setting.vehicleTypeId|title }}</strong>
+                                                    </div>
+                                                </td>
+                                                <td>₦{{ setting.pricePerDistance|floatformat:2 }}</td>
+                                                <td>₦{{ setting.addOnFee|floatformat:2 }}</td>
+                                                <td>
+                                                    <span class="badge bg-primary">
+                                                        ₦{{ setting.pricePerDistance|add:setting.addOnFee|floatformat:2 }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ setting.dateCreated|date:"M d, Y"|default:"N/A" }}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                                data-bs-toggle="modal" data-bs-target="#editPaymentSettingModal"
+                                                                data-setting-id="{{ setting.id }}"
+                                                                data-vehicle-type="{{ setting.vehicle_type_name|default:setting.vehicleTypeId }}"
+                                                                data-price-per-distance="{{ setting.pricePerDistance }}"
+                                                                data-add-on-fee="{{ setting.addOnFee }}">
+                                                            <i class="ri-edit-line"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                onclick="deletePaymentSetting('{{ setting.id }}', '{{ setting.vehicle_type_name|default:setting.vehicleTypeId }}')">
+                                                            <i class="ri-delete-bin-line"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="6" class="text-center">
+                                                    <div class="py-4">
+                                                        <i class="ri-settings-2-line fs-48 text-muted mb-3"></i>
+                                                        <h5>No Payment Settings</h5>
+                                                        <p class="text-muted">Configure pricing for different vehicle types.</p>
+                                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPaymentSettingModal">
+                                                            <i class="ri-add-line me-1"></i> Add Payment Setting
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vehicle Types Reference -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Available Vehicle Types</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if vehicle_types %}
+                                <div class="row">
+                                    {% for vehicle_type in vehicle_types %}
+                                    <div class="col-md-3 mb-3">
+                                        <div class="card border">
+                                            <div class="card-body text-center">
+                                                <div class="avatar-sm mx-auto mb-2 bg-light rounded d-flex align-items-center justify-content-center">
+                                                    <span class="text-primary fw-bold">{{ vehicle_type.vehicleIcon|default:"car"|upper }}</span>
+                                                </div>
+                                                <h6 class="card-title">{{ vehicle_type.type|title }}</h6>
+                                                <span class="badge {% if vehicle_type.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                                    {{ vehicle_type.status|default:"Active" }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info">
+                                    <i class="ri-information-line me-2"></i>
+                                    No vehicle types available. <a href="{% url 'vehicle_types' %}">Create vehicle types first</a>.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Payment Setting Modal -->
+<div class="modal fade" id="createPaymentSettingModal" tabindex="-1" aria-labelledby="createPaymentSettingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'create_payment_setting' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createPaymentSettingModalLabel">Create Payment Setting</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="vehicle_type" class="form-label">Vehicle Type</label>
+                        <select class="form-select" id="vehicle_type" name="vehicle_type" required>
+                            <option value="">Select Vehicle Type</option>
+                            {% for vehicle_type in vehicle_types %}
+                                <option value="{{ vehicle_type.id }}">{{ vehicle_type.type|title }}</option>
+                            {% endfor %}
+                        </select>
+                        <small class="form-text text-muted">Choose the vehicle type for this pricing configuration</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price_per_distance" class="form-label">Price per Distance (₦)</label>
+                        <input type="number" class="form-control" id="price_per_distance" name="price_per_distance" 
+                               step="0.01" min="0" required placeholder="0.00">
+                        <small class="form-text text-muted">Cost per kilometer/mile</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="add_on_fee" class="form-label">Add-on Fee (₦)</label>
+                        <input type="number" class="form-control" id="add_on_fee" name="add_on_fee" 
+                               step="0.01" min="0" required placeholder="0.00">
+                        <small class="form-text text-muted">Additional base fee for this vehicle type</small>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>Total Base Price:</strong> <span id="totalBasePrice">₦0.00</span>
+                        <small class="d-block mt-1 text-muted">This is the minimum cost before distance calculation</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Payment Setting</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Payment Setting Modal -->
+<div class="modal fade" id="editPaymentSettingModal" tabindex="-1" aria-labelledby="editPaymentSettingModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="editPaymentSettingForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPaymentSettingModalLabel">Edit Payment Setting</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_vehicle_type" class="form-label">Vehicle Type</label>
+                        <input type="text" class="form-control" id="edit_vehicle_type" readonly>
+                        <small class="form-text text-muted">Vehicle type cannot be changed after creation</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_price_per_distance" class="form-label">Price per Distance (₦)</label>
+                        <input type="number" class="form-control" id="edit_price_per_distance" name="price_per_distance" 
+                               step="0.01" min="0" required>
+                        <small class="form-text text-muted">Cost per kilometer/mile</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_add_on_fee" class="form-label">Add-on Fee (₦)</label>
+                        <input type="number" class="form-control" id="edit_add_on_fee" name="add_on_fee" 
+                               step="0.01" min="0" required>
+                        <small class="form-text text-muted">Additional base fee for this vehicle type</small>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>Total Base Price:</strong> <span id="editTotalBasePrice">₦0.00</span>
+                        <small class="d-block mt-1 text-muted">This is the minimum cost before distance calculation</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Payment Setting</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Calculate total base price
+function calculateTotal() {
+    const pricePerDistance = parseFloat(document.getElementById('price_per_distance').value) || 0;
+    const addOnFee = parseFloat(document.getElementById('add_on_fee').value) || 0;
+    const total = pricePerDistance + addOnFee;
+    document.getElementById('totalBasePrice').textContent = '₦' + total.toFixed(2);
+}
+
+function calculateEditTotal() {
+    const pricePerDistance = parseFloat(document.getElementById('edit_price_per_distance').value) || 0;
+    const addOnFee = parseFloat(document.getElementById('edit_add_on_fee').value) || 0;
+    const total = pricePerDistance + addOnFee;
+    document.getElementById('editTotalBasePrice').textContent = '₦' + total.toFixed(2);
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Create modal calculations
+    document.getElementById('price_per_distance').addEventListener('input', calculateTotal);
+    document.getElementById('add_on_fee').addEventListener('input', calculateTotal);
+    
+    // Edit modal calculations
+    document.getElementById('edit_price_per_distance').addEventListener('input', calculateEditTotal);
+    document.getElementById('edit_add_on_fee').addEventListener('input', calculateEditTotal);
+    
+    // Handle edit modal
+    const editModal = document.getElementById('editPaymentSettingModal');
+    const editForm = document.getElementById('editPaymentSettingForm');
+    
+    editModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const settingId = button.getAttribute('data-setting-id');
+        const vehicleType = button.getAttribute('data-vehicle-type');
+        const pricePerDistance = button.getAttribute('data-price-per-distance');
+        const addOnFee = button.getAttribute('data-add-on-fee');
+        
+        document.getElementById('edit_vehicle_type').value = vehicleType;
+        document.getElementById('edit_price_per_distance').value = pricePerDistance;
+        document.getElementById('edit_add_on_fee').value = addOnFee;
+        
+        editForm.action = `/payment-settings/${settingId}/update/`;
+        calculateEditTotal();
+    });
+});
+
+// Delete payment setting
+function deletePaymentSetting(settingId, vehicleType) {
+    if (confirm(`Are you sure you want to delete the payment setting for "${vehicleType}"? This action cannot be undone.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/payment-settings/${settingId}/delete/`;
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}

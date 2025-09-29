@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="utf-8" />
-    <title>Dashboard | Velonic - Bootstrap 5 Admin & Dashboard Template</title>
+    <title>Dashboard | Vlogx Admin</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta content="A fully responsive admin theme which can be used to build CRM, CMS,ERP etc." name="description" />
     <meta content="Techzaa" name="author" />
@@ -76,18 +76,18 @@
                     </button>
 
                     <!-- Topbar Search Form -->
-                    <div class="app-search d-none d-lg-block">
+                    {% comment %} <div class="app-search d-none d-lg-block">
                         <form>
                             <div class="input-group">
                                 <input type="search" class="form-control" placeholder="Search...">
                                 <span class="ri-search-line search-icon text-muted"></span>
                             </div>
                         </form>
-                    </div>
+                    </div> {% endcomment %}
                 </div>
 
                 <ul class="topbar-menu d-flex align-items-center gap-3">
-                    <li class="dropdown d-lg-none">
+                    {% comment %} <li class="dropdown d-lg-none">
                         <a class="nav-link dropdown-toggle arrow-none" data-bs-toggle="dropdown" href="#" role="button"
                             aria-haspopup="false" aria-expanded="false">
                             <i class="ri-search-line fs-22"></i>
@@ -98,9 +98,9 @@
                                     aria-label="Recipient's username">
                             </form>
                         </div>
-                    </li>
+                    </li> {% endcomment %}
 
-                    <li class="dropdown">
+                    {% comment %} <li class="dropdown">
                         <a class="nav-link dropdown-toggle arrow-none" data-bs-toggle="dropdown" href="#" role="button"
                             aria-haspopup="false" aria-expanded="false">
                             <img src="/static/images/flags/us.jpg" alt="user-image" class="me-0 me-sm-1" height="12">
@@ -134,9 +134,9 @@
                             </a>
 
                         </div>
-                    </li>
+                    </li> {% endcomment %}
 
-                    <li class="dropdown notification-list">
+                    {% comment %} <li class="dropdown notification-list">
                         <a class="nav-link dropdown-toggle arrow-none" data-bs-toggle="dropdown" href="#" role="button"
                             aria-haspopup="false" aria-expanded="false">
                             <i class="ri-mail-line fs-22"></i>
@@ -277,9 +277,9 @@
                             </a>
 
                         </div>
-                    </li>
+                    </li> {% endcomment %}
 
-                    <li class="dropdown notification-list">
+                    {% comment %} <li class="dropdown notification-list">
                         <a class="nav-link dropdown-toggle arrow-none" data-bs-toggle="dropdown" href="#" role="button"
                             aria-haspopup="false" aria-expanded="false">
                             <i class="ri-notification-3-line fs-22"></i>
@@ -368,7 +368,7 @@
                             </a>
 
                         </div>
-                    </li>
+                    </li> {% endcomment %}
 
                     <li class="d-none d-sm-inline-block">
                         <a class="nav-link" data-bs-toggle="offcanvas" href="#theme-settings-offcanvas">
@@ -386,11 +386,11 @@
                         <a class="nav-link dropdown-toggle arrow-none nav-user" data-bs-toggle="dropdown" href="#"
                             role="button" aria-haspopup="false" aria-expanded="false">
                             <span class="account-user-avatar">
-                                <img src="/static/images/users/avatar-1.jpg" alt="user-image" width="32"
+                                <img src="/static/images/bdlogoicon.png" alt="user-image" width="32"
                                     class="rounded-circle">
                             </span>
                             <span class="d-lg-block d-none">
-                                <h5 class="my-0 fw-normal">Thomson <i
+                                <h5 class="my-0 fw-normal">Admin <i
                                         class="ri-arrow-down-s-line d-none d-sm-inline-block align-middle"></i></h5>
                             </span>
                         </a>
@@ -401,16 +401,16 @@
                             </div>
 
                             <!-- item-->
-                            <a href="pages-profile.html" class="dropdown-item">
+                            {% comment %} <a href="pages-profile.html" class="dropdown-item">
                                 <i class="ri-account-circle-line fs-18 align-middle me-1"></i>
                                 <span>My Account</span>
-                            </a>
+                            </a> {% endcomment %}
 
                             <!-- item-->
-                            <a href="pages-profile.html" class="dropdown-item">
+                            {% comment %} <a href="pages-profile.html" class="dropdown-item">
                                 <i class="ri-settings-4-line fs-18 align-middle me-1"></i>
                                 <span>Settings</span>
-                            </a>
+                            </a> {% endcomment %}
 
 
                             <!-- item-->
@@ -483,20 +483,39 @@
                             <span> Vehicle Management </span>
                         </a>
                     </li>
+                    <li class="side-nav-item">
+                        <a href="{% url 'vehicle_types' %}" class="side-nav-link">
+                            <i class="ri-car-line"></i>
+                            <span> Vehicle Types </span>
+                        </a>
+                    </li>
 
 
                     <li class="side-nav-item">
-                        <a class="side-nav-link">
+                        <a href="{% url 'orders_management' %}" class="side-nav-link">
                             <i class="ri-shopping-bag-3-line"></i>
-                            
                             <span> Orders Management </span>
+                        </a>
+                    </li>
+
+                    <li class="side-nav-item">
+                        <a href="{% url 'payment_modes' %}" class="side-nav-link">
+                            <i class="ri-bank-card-line"></i>
+                            <span> Payment Modes </span>
+                        </a>
+                    </li>
+
+                    <li class="side-nav-item">
+                        <a href="{% url 'payment_settings' %}" class="side-nav-link">
+                            <i class="ri-settings-2-line"></i>
+                            <span> Payment Settings </span>
                         </a>
                     </li>
 
                     <li class="side-nav-title">Mailing and Messaging</li>
 
                     <li class="side-nav-item">
-                        <a class="side-nav-link">
+                        <a href="{% url 'customer_mailing' %}" class="side-nav-link">
                             <i class="ri-mail-send-line"></i>
                             
                             <span> Customers Mailing </span>
@@ -504,7 +523,7 @@
                     </li>
 
                     <li class="side-nav-item">
-                        <a class="side-nav-link">
+                        <a href="{% url 'driver_mailing' %}" class="side-nav-link">
                             <i class="ri-mail-send-line"></i>
                             
                             <span> Drivers Mailing </span>
@@ -514,9 +533,8 @@
                     <li class="side-nav-title">Others</li>
 
                     <li class="side-nav-item">
-                        <a class="side-nav-link">
+                        <a href="{% url 'faqs' %}" class="side-nav-link">
                             <i class="ri-questionnaire-line"></i>
-                            
                             <span> Manage FAQs </span>
                         </a>
                     </li>

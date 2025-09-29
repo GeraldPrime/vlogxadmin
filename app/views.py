@@ -1,4 +1,3 @@
-
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
@@ -32,24 +31,37 @@ firebase_service = FirebaseService()
 #         return render(request, "index.html", {'driver_stats': {}, 'customer_stats': {}})
 
 def home(request):
-    """Dashboard home page"""
+    """Enhanced dashboard home page with comprehensive analytics"""
     try:
-        driver_stats = firebase_service.get_drivers_stats()
+        # Get enhanced statistics
+        driver_stats = firebase_service.get_driver_stats_enhanced()
         customer_stats = firebase_service.get_customers_stats()
+        trip_analytics = firebase_service.get_trip_analytics()
         
-        total_drivers = driver_stats.get('total_drivers', 0)
-        active_drivers = driver_stats.get('active_drivers', 0)
-        offline_drivers = max(0, total_drivers - active_drivers)  # Ensure non-negative
+        # Get recent orders for real-time updates
+        recent_orders = firebase_service.get_all_trips(limit=10)
+        
+        # Get recent drivers and customers
+        recent_drivers = firebase_service.get_all_drivers()[:5]
+        recent_customers = firebase_service.get_all_customers()[:5]
 
         context = {
             'driver_stats': driver_stats,
             'customer_stats': customer_stats,
-            'total_drivers': total_drivers,
-            'active_drivers': active_drivers,
-            'offline_drivers': offline_drivers,
+            'trip_analytics': trip_analytics,
+            'recent_orders': recent_orders,
+            'recent_drivers': recent_drivers,
+            'recent_customers': recent_customers,
+            'total_drivers': driver_stats.get('total_drivers', 0),
+            'active_drivers': driver_stats.get('active_drivers', 0),
+            'offline_drivers': driver_stats.get('offline_drivers', 0),
             'total_customers': customer_stats.get('total_customers', 0),
-            'pending_drivers': driver_stats.get('pending_drivers', 0),  # Assuming this is available
-            'approved_drivers': driver_stats.get('approved_drivers', 0),  # Assuming this is available
+            'pending_drivers': driver_stats.get('pending_drivers', 0),
+            'approved_drivers': driver_stats.get('approved_drivers', 0),
+            'total_trips': trip_analytics.get('total_trips', 0),
+            'completed_trips': trip_analytics.get('completed_trips', 0),
+            'total_revenue': trip_analytics.get('total_revenue', 0),
+            'completion_rate': trip_analytics.get('completion_rate', 0),
         }
         return render(request, "index.html", context)
     except Exception as e:
@@ -57,12 +69,20 @@ def home(request):
         return render(request, "index.html", {
             'driver_stats': {},
             'customer_stats': {},
+            'trip_analytics': {},
+            'recent_orders': [],
+            'recent_drivers': [],
+            'recent_customers': [],
             'total_drivers': 0,
             'active_drivers': 0,
             'offline_drivers': 0,
             'total_customers': 0,
             'pending_drivers': 0,
             'approved_drivers': 0,
+            'total_trips': 0,
+            'completed_trips': 0,
+            'total_revenue': 0,
+            'completion_rate': 0,
         }) 
 
 
@@ -98,7 +118,7 @@ def customers_management(request):
 
 
 def driver_detail(request, driver_id):
-    """Driver detail page with documents and vehicle review"""
+    """Driver detail page with comprehensive information including trips, ratings, balance, and analytics"""
     logger.info(f"Loading driver detail for driver_id: {driver_id}")
     try:
         driver = firebase_service.get_driver_by_id(driver_id)
@@ -117,11 +137,83 @@ def driver_detail(request, driver_id):
             vehicle_data['id'] = doc.id
             vehicle = vehicle_data
             break
+            
+        # Fetch driver trips with enhanced data
+        trips = firebase_service.get_driver_trips(driver_id)
+        completed_trips = [trip for trip in trips if trip.get('status') in ['completed', 'ended', 'delivered']]
+        ongoing_trips = [trip for trip in trips if trip.get('status') in ['pending', 'accepted', 'picked_up', 'in_progress']]
+        cancelled_trips = [trip for trip in trips if trip.get('status') in ['cancelled', 'cancelled_by_driver', 'cancelled_by_customer']]
+        
+        # Fetch enhanced driver ratings with trip context
+        ratings = firebase_service.get_driver_ratings(driver_id)
+        rating_analytics = firebase_service.get_rating_analytics(driver_id)
+        if not rating_analytics:
+            rating_analytics = {
+                'total_ratings': 0,
+                'average_rating': 0,
+                'rating_breakdown': {},
+                'recent_ratings': []
+            }
+        
+        # Fetch comprehensive earnings and balance info
+        earnings_info = firebase_service.get_driver_earnings(driver_id)
+        if not earnings_info:
+            earnings_info = {
+                'total_earnings': 0,
+                'total_trips': 0,
+                'avg_earnings_per_trip': 0,
+                'current_balance': 0,
+                'pending_amount': 0,
+                'total_withdrawals': 0
+            }
+        balance_info = firebase_service.get_driver_balance(driver_id)
+        
+        # Fetch driver location
+        location_info = firebase_service.get_driver_location(driver_id)
+        
+        # Debug logging
+        logger.info(f"Driver {driver_id} data summary:")
+        logger.info(f"  - Trips: {len(trips)}")
+        logger.info(f"  - Ratings: {len(ratings)}")
+        logger.info(f"  - Earnings: {earnings_info}")
+        logger.info(f"  - Balance: {balance_info}")
+        logger.info(f"  - Location: {location_info}")
+        
+        # Additional debugging for trips
+        if trips:
+            logger.info(f"  - Sample trip: {trips[0]}")
+        else:
+            logger.warning(f"  - No trips found for driver {driver_id}")
+            
+        # Additional debugging for ratings
+        if ratings:
+            logger.info(f"  - Sample rating: {ratings[0]}")
+            logger.info(f"  - Rating analytics: {rating_analytics}")
+        else:
+            logger.warning(f"  - No ratings found for driver {driver_id}")
+            logger.warning(f"  - Rating analytics: {rating_analytics}")
+        
+        # Get recent activity (last 10 trips)
+        recent_trips = sorted(trips, key=lambda x: x.get('dateCreated', ''), reverse=True)[:10]
 
         context = {
             'driver': driver,
             'driver_documents': driver_documents,
             'vehicle': vehicle,
+            'trips': trips,
+            'completed_trips': completed_trips,
+            'ongoing_trips': ongoing_trips,
+            'cancelled_trips': cancelled_trips,
+            'recent_trips': recent_trips,
+            'trips_count': len(trips),
+            'completed_trips_count': len(completed_trips),
+            'ratings': ratings,
+            'rating_analytics': rating_analytics,
+            'ratings_count': len(ratings),
+            'avg_rating': rating_analytics.get('average_rating', 0),
+            'balance_info': balance_info,
+            'earnings_info': earnings_info,
+            'location_info': location_info,
             'page_title': f'Driver Details - {driver.get("firstName", "")} {driver.get("lastName", "")}'
         }
         return render(request, "drivers/driver_detail.html", context)
@@ -139,15 +231,50 @@ def customer_detail(request, customer_id):
         if not customer:
             messages.error(request, "Customer not found")
             return redirect('customers_management')
-        
+        # Fetch location and orders
+        customer_location = firebase_service.get_customer_location(customer_id)
+        customer_trips = firebase_service.get_customer_trips(customer_id)
+
+        # Group orders by status
+        completed = [t for t in customer_trips if t.get('status') in ['completed', 'ended', 'delivered']]
+        in_transit = [t for t in customer_trips if t.get('status') in ['accepted', 'picked_up', 'in_progress', 'started', 'ongoing']]
+        pending = [t for t in customer_trips if t.get('status') in ['pending']]
+        cancelled = [t for t in customer_trips if t.get('status') in ['cancelled', 'cancelled_by_driver', 'cancelled_by_customer']]
+
         context = {
             'customer': customer,
+            'customer_location': customer_location,
+            'customer_trips': customer_trips,
+            'completed_trips': completed,
+            'in_transit_trips': in_transit,
+            'pending_trips': pending,
+            'cancelled_trips': cancelled,
             'page_title': f'Customer Details - {customer.get("firstName", "")} {customer.get("lastName", "")}'
         }
         return render(request, "customers/customer_detail.html", context)
     except Exception as e:
         messages.error(request, f"Error loading customer: {str(e)}")
         return redirect('customers_management')
+
+def customer_live_status(request, customer_id: str):
+    """Return JSON with customer's current location for live tracking."""
+    try:
+        customer = firebase_service.get_customer_by_id(customer_id)
+        if not customer:
+            return JsonResponse({'success': False, 'message': 'Customer not found'}, status=404)
+        location = firebase_service.get_customer_location(customer_id)
+        return JsonResponse({
+            'success': True,
+            'customer': {
+                'id': customer.get('id'),
+                'firstName': customer.get('firstName'),
+                'lastName': customer.get('lastName')
+            },
+            'location': location
+        })
+    except Exception as e:
+        logger.error(f"customer_live_status error for {customer_id}: {str(e)}")
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)
 
 def update_driver_status(request):
     """AJAX endpoint to update driver status"""
@@ -170,8 +297,424 @@ def update_driver_status(request):
             return JsonResponse({'success': False, 'message': str(e)})
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
 
+def payment_modes(request):
+    """Payment modes management page"""
+    try:
+        payment_modes = firebase_service.get_payment_modes()
+        context = {
+            'payment_modes': payment_modes,
+            'page_title': 'Payment Modes Management'
+        }
+        return render(request, "payments/payment_modes.html", context)
+    except Exception as e:
+        logger.error(f"Error loading payment modes: {str(e)}")
+        messages.error(request, f"Error loading payment modes: {str(e)}")
+        return redirect('home')
+
+def create_payment_mode(request):
+    """Create new payment mode"""
+    if request.method == 'POST':
+        try:
+            mode = request.POST.get('mode')
+            status = request.POST.get('status', 'Active')
+            
+            if not mode:
+                messages.error(request, "Payment mode is required")
+                return redirect('payment_modes')
+            
+            data = {
+                'mode': mode,
+                'status': status
+            }
+            
+            payment_mode_id = firebase_service.create_payment_mode(data)
+            
+            if payment_mode_id:
+                messages.success(request, "Payment mode created successfully")
+            else:
+                messages.error(request, "Failed to create payment mode")
+                
+        except Exception as e:
+            logger.error(f"Error creating payment mode: {str(e)}")
+            messages.error(request, f"Error creating payment mode: {str(e)}")
+            
+    return redirect('payment_modes')
+
+def update_payment_mode(request, payment_mode_id):
+    """Update payment mode"""
+    if request.method == 'POST':
+        try:
+            mode = request.POST.get('mode')
+            status = request.POST.get('status', 'Active')
+            
+            if not mode:
+                messages.error(request, "Payment mode is required")
+                return redirect('payment_modes')
+            
+            data = {
+                'mode': mode,
+                'status': status
+            }
+            
+            success = firebase_service.update_payment_mode(payment_mode_id, data)
+            
+            if success:
+                messages.success(request, "Payment mode updated successfully")
+            else:
+                messages.error(request, "Failed to update payment mode")
+                
+        except Exception as e:
+            logger.error(f"Error updating payment mode: {str(e)}")
+            messages.error(request, f"Error updating payment mode: {str(e)}")
+            
+    return redirect('payment_modes')
+
+def delete_payment_mode(request, payment_mode_id):
+    """Delete payment mode"""
+    if request.method == 'POST':
+        try:
+            success = firebase_service.delete_payment_mode(payment_mode_id)
+            
+            if success:
+                messages.success(request, "Payment mode deleted successfully")
+            else:
+                messages.error(request, "Failed to delete payment mode")
+                
+        except Exception as e:
+            logger.error(f"Error deleting payment mode: {str(e)}")
+            messages.error(request, f"Error deleting payment mode: {str(e)}")
+            
+    return redirect('payment_modes')
+
+# def payment_settings(request):
+#     """Payment settings management page"""
+#     try:
+#         payment_settings = firebase_service.get_payment_settings()
+#         vehicle_types = firebase_service.get_vehicle_types()
+        
+#         context = {
+#             'payment_settings': payment_settings,
+#             'vehicle_types': vehicle_types,
+#             'page_title': 'Payment Settings Management'
+#         }
+#         return render(request, "payments/payment_settings.html", context)
+#     except Exception as e:
+#         logger.error(f"Error loading payment settings: {str(e)}")
+#         messages.error(request, f"Error loading payment settings: {str(e)}")
+#         return redirect('home')
+
+
+def payment_settings(request):
+    """Payment settings management page"""
+    try:
+        payment_settings = firebase_service.get_payment_settings()
+        vehicle_types = firebase_service.get_vehicle_types()
+        
+        context = {
+            'payment_settings': payment_settings,
+            'vehicle_types': vehicle_types,
+            'page_title': 'Payment Settings Management'
+        }
+        return render(request, "payments/payment_settings.html", context)
+    except Exception as e:
+        logger.error(f"Error loading payment settings: {str(e)}")
+        messages.error(request, f"Error loading payment settings: {str(e)}")
+        return redirect('home')
+
+
+def create_payment_setting(request):
+    """Create new payment setting"""
+    if request.method == 'POST':
+        try:
+            vehicle_type = request.POST.get('vehicle_type')
+            price_per_distance = request.POST.get('price_per_distance')
+            add_on_fee = request.POST.get('add_on_fee')
+            
+            if not vehicle_type or not price_per_distance or not add_on_fee:
+                messages.error(request, "All fields are required")
+                return redirect('payment_settings')
+            
+            data = {
+                'vehicleTypeId': vehicle_type,
+                'pricePerDistance': str(price_per_distance),  # Store as string to match your DB
+                'addOnFee': float(add_on_fee)  # Use correct field name from your DB
+            }
+            
+            payment_setting_id = firebase_service.create_payment_setting(data)
+            
+            if payment_setting_id:
+                messages.success(request, "Payment setting created successfully")
+            else:
+                messages.error(request, "Failed to create payment setting")
+                
+        except Exception as e:
+            logger.error(f"Error creating payment setting: {str(e)}")
+            messages.error(request, f"Error creating payment setting: {str(e)}")
+            
+    return redirect('payment_settings')
+
+def update_payment_setting(request, payment_setting_id):
+    """Update payment setting"""
+    if request.method == 'POST':
+        try:
+            price_per_distance = request.POST.get('price_per_distance')
+            add_on_fee = request.POST.get('add_on_fee')
+            
+            if not price_per_distance or not add_on_fee:
+                messages.error(request, "All fields are required")
+                return redirect('payment_settings')
+            
+            data = {
+                'pricePerDistance': float(price_per_distance),
+                'addOnFee': float(add_on_fee)
+            }
+            
+            success = firebase_service.update_payment_setting(payment_setting_id, data)
+            
+            if success:
+                messages.success(request, "Payment setting updated successfully")
+            else:
+                messages.error(request, "Failed to update payment setting")
+                
+        except Exception as e:
+            logger.error(f"Error updating payment setting: {str(e)}")
+            messages.error(request, f"Error updating payment setting: {str(e)}")
+            
+    return redirect('payment_settings')
+
+def delete_payment_setting(request, setting_id):
+    """Delete payment setting"""
+    if request.method == 'POST':
+        try:
+            success = firebase_service.delete_payment_setting(setting_id)
+            
+            if success:
+                messages.success(request, "Payment setting deleted successfully")
+            else:
+                messages.error(request, "Failed to delete payment setting")
+                
+        except Exception as e:
+            logger.error(f"Error deleting payment setting: {str(e)}")
+            messages.error(request, f"Error deleting payment setting: {str(e)}")
+            
+    return redirect('payment_settings')
+
+
+def orders_management(request):
+    try:
+        status_filter = request.GET.get('status', None)
+        trips = firebase_service.get_all_trips(limit=50, status=status_filter)
+        
+        # Calculate statistics
+        pending_count = len([t for t in trips if t.get('status') == 'pending'])
+        completed_count = len([t for t in trips if t.get('status') == 'ended'])
+        total_revenue = sum(float(t.get('deliveryAmount', 0)) for t in trips if t.get('status') == 'ended')
+        
+        context = {
+            'trips': trips,
+            'status_filter': status_filter,
+            'pending_count': pending_count,
+            'completed_count': completed_count,
+            'total_revenue': total_revenue,
+            'page_title': 'Orders Management'
+        }
+        return render(request, "orders/orders_list.html", context)
+    except Exception as e:
+        logger.error(f"Error loading orders: {str(e)}")
+        messages.error(request, f"Error loading orders: {str(e)}")
+        return redirect('home')
+
+def order_detail(request, order_id):
+    """Order detail page with tracking information"""
+    try:
+        trip = firebase_service.get_trip_by_id(order_id)
+        
+        if not trip:
+            messages.error(request, "Order not found")
+            return redirect('orders_management')
+        
+        context = {
+            'trip': trip,
+            'page_title': f'Order #{order_id[:8]}'
+        }
+        return render(request, "orders/order_detail.html", context)
+    except Exception as e:
+        logger.error(f"Error loading order details: {str(e)}")
+        messages.error(request, f"Error loading order details: {str(e)}")
+        return redirect('orders_management')
+
+def update_order_status(request, order_id):
+    """Update order status"""
+    if request.method == 'POST':
+        try:
+            status = request.POST.get('status')
+            
+            if not status:
+                messages.error(request, "Status is required")
+                return redirect('order_detail', order_id=order_id)
+            
+            success = firebase_service.update_trip_status(order_id, status)
+            
+            if success:
+                messages.success(request, "Order status updated successfully")
+            else:
+                messages.error(request, "Failed to update order status")
+                
+        except Exception as e:
+            logger.error(f"Error updating order status: {str(e)}")
+            messages.error(request, f"Error updating order status: {str(e)}")
+            
+    return redirect('order_detail', order_id=order_id)
+
+def vehicle_types(request):
+    """Vehicle types management page"""
+    try:
+        vehicle_types = firebase_service.get_vehicle_types()
+        
+        context = {
+            'vehicle_types': vehicle_types,
+            'page_title': 'Vehicle Types Management'
+        }
+        return render(request, "vehicles/vehicle_types.html", context)
+    except Exception as e:
+        logger.error(f"Error loading vehicle types: {str(e)}")
+        messages.error(request, f"Error loading vehicle types: {str(e)}")
+        return redirect('home')
+
+# def create_vehicle_type(request):
+#     """Create new vehicle type"""
+#     if request.method == 'POST':
+#         try:
+#             name = request.POST.get('name')
+#             base_fare = request.POST.get('base_fare')
+#             per_km_charge = request.POST.get('per_km_charge')
+#             per_minute_charge = request.POST.get('per_minute_charge')
+#             capacity = request.POST.get('capacity')
+#             description = request.POST.get('description')
+#             is_active = request.POST.get('is_active') == 'on'
+            
+#             if not name:
+#                 messages.error(request, "Vehicle type name is required")
+#                 return redirect('vehicle_types')
+            
+#             data = {
+#                 'name': name,
+#                 'baseFare': float(base_fare) if base_fare else 0,
+#                 'perKmCharge': float(per_km_charge) if per_km_charge else 0,
+#                 'perMinuteCharge': float(per_minute_charge) if per_minute_charge else 0,
+#                 'capacity': int(capacity) if capacity else 0,
+#                 'description': description,
+#                 'isActive': is_active
+#             }
+            
+#             vehicle_type_id = firebase_service.create_vehicle_type(data)
+            
+#             if vehicle_type_id:
+#                 messages.success(request, "Vehicle type created successfully")
+#             else:
+#                 messages.error(request, "Failed to create vehicle type")
+                
+#         except Exception as e:
+#             logger.error(f"Error creating vehicle type: {str(e)}")
+#             messages.error(request, f"Error creating vehicle type: {str(e)}")
+            
+#     return redirect('vehicle_types')
+
+
+def create_vehicle_type(request):
+    """Create new vehicle type"""
+    if request.method == 'POST':
+        try:
+            vehicle_type = request.POST.get('type')
+            vehicle_icon = request.POST.get('vehicleIcon')
+            status = request.POST.get('status', 'Active')
+            
+            if not vehicle_type or not vehicle_icon:
+                messages.error(request, "Vehicle type and icon are required")
+                return redirect('vehicle_types')
+            
+            data = {
+                'type': vehicle_type,
+                'vehicleIcon': vehicle_icon,
+                'status': status
+            }
+            
+            vehicle_type_id = firebase_service.create_vehicle_type(data)
+            
+            if vehicle_type_id:
+                messages.success(request, "Vehicle type created successfully")
+            else:
+                messages.error(request, "Failed to create vehicle type")
+                
+        except Exception as e:
+            logger.error(f"Error creating vehicle type: {str(e)}")
+            messages.error(request, f"Error creating vehicle type: {str(e)}")
+            
+    return redirect('vehicle_types')
+
+
+def update_vehicle_type(request, type_id):
+    """Update vehicle type"""
+    if request.method == 'POST':
+        try:
+            name = request.POST.get('name')
+            base_fare = request.POST.get('base_fare')
+            per_km_charge = request.POST.get('per_km_charge')
+            per_minute_charge = request.POST.get('per_minute_charge')
+            capacity = request.POST.get('capacity')
+            description = request.POST.get('description')
+            is_active = request.POST.get('is_active') == 'on'
+            vehicle_icon = request.POST.get('vehicleIcon')
+            status = request.POST.get('status')
+            
+            if not name:
+                messages.error(request, "Vehicle type name is required")
+                return redirect('vehicle_types')
+            
+            data = {
+                'type': name,  # Change 'name' to 'type' to match Firestore
+                'baseFare': float(base_fare) if base_fare else 0,
+                'perKmCharge': float(per_km_charge) if per_km_charge else 0,
+                'perMinuteCharge': float(per_minute_charge) if per_minute_charge else 0,
+                'capacity': int(capacity) if capacity else 0,
+                'description': description,
+                'isActive': is_active,
+                'vehicleIcon': vehicle_icon,
+                'status': status
+            }
+            
+            success = firebase_service.update_vehicle_type(type_id, data)
+            
+            if success:
+                messages.success(request, "Vehicle type updated successfully")
+            else:
+                messages.error(request, "Failed to update vehicle type")
+                
+        except Exception as e:
+            logger.error(f"Error updating vehicle type: {str(e)}")
+            messages.error(request, f"Error updating vehicle type: {str(e)}")
+            
+    return redirect('vehicle_types')
+
+def delete_vehicle_type(request, type_id):
+    """Delete vehicle type"""
+    if request.method == 'POST':
+        try:
+            success = firebase_service.delete_vehicle_type(type_id)
+            
+            if success:
+                messages.success(request, "Vehicle type deleted successfully")
+            else:
+                messages.error(request, "Failed to delete vehicle type")
+                
+        except Exception as e:
+            logger.error(f"Error deleting vehicle type: {str(e)}")
+            messages.error(request, f"Error deleting vehicle type: {str(e)}")
+            
+    return redirect('vehicle_types')
+
 def delete_driver_ajax(request):
-    """AJAX endpoint to delete driver"""
+    """Delete a driver via AJAX"""
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -501,3 +1044,44 @@ def delete_vehicle(request):
         except Exception as e:
             return JsonResponse({'success': False, 'message': str(e)})
     return JsonResponse({'success': False, 'message': 'Invalid request method'})
+
+
+def driver_live_status(request, driver_id: str):
+    """Return JSON with driver's current location and active trip for live tracking."""
+    try:
+        driver = firebase_service.get_driver_by_id(driver_id)
+        if not driver:
+            return JsonResponse({'success': False, 'message': 'Driver not found'}, status=404)
+
+        location = firebase_service.get_driver_location(driver_id)
+        current_trip = firebase_service.get_driver_current_trip(driver_id)
+
+        # Shape response
+        payload = {
+            'success': True,
+            'driver': {
+                'id': driver.get('id'),
+                'firstName': driver.get('firstName'),
+                'lastName': driver.get('lastName'),
+                'isDriverOnline': driver.get('isDriverOnline', False)
+            },
+            'location': location,
+            'current_trip': None
+        }
+
+        if current_trip:
+            payload['current_trip'] = {
+                'id': current_trip.get('id'),
+                'status': current_trip.get('status'),
+                'pickupLocation': current_trip.get('pickupLocation'),
+                'dropOffLocation': current_trip.get('dropOffLocation'),
+                'pickupLatLng': current_trip.get('pickupLatLng'),
+                'dropOffLatLng': current_trip.get('dropOffLatLng'),
+                'deliveryAmount': current_trip.get('deliveryAmount'),
+                'orderID': current_trip.get('orderID')
+            }
+
+        return JsonResponse(payload)
+    except Exception as e:
+        logger.error(f"driver_live_status error for {driver_id}: {str(e)}")
+        return JsonResponse({'success': False, 'message': str(e)}, status=500)

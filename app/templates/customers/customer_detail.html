@@ -28,6 +28,9 @@
         }
     </style>
 
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+
     <div class="content-page">
         <div class="content">
             <div class="container-fluid">
@@ -60,6 +63,28 @@
                     </div>
                 </div>
 
+                <!-- Live Map Tracking -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="header-title mb-3">Live Location</h4>
+                                <div id="customer-map" style="width: 100%; height: 320px; border-radius: 8px; overflow: hidden;"></div>
+                                <div class="row mt-3">
+                                    <div class="col-md-6">
+                                        <div class="p-2 border rounded">
+                                            <h6 class="mb-2">Current Position</h6>
+                                            <div class="small" id="cust-location">Lat: -, Lng: -</div>
+                                            <div class="small" id="cust-updated">Updated: -</div>
+                                            <div class="small" id="cust-address">Address: -</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-sm-12">
                         <div class="card">
@@ -84,7 +109,263 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Customer Orders -->
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <h4 class="header-title mb-3">Orders</h4>
+                                <ul class="nav nav-tabs nav-bordered mb-3">
+                                    <li class="nav-item"><a href="#cust-completed" data-bs-toggle="tab" class="nav-link active">Completed ({{ completed_trips|length|default:"0" }})</a></li>
+                                    <li class="nav-item"><a href="#cust-intransit" data-bs-toggle="tab" class="nav-link">In Transit ({{ in_transit_trips|length|default:"0" }})</a></li>
+                                    <li class="nav-item"><a href="#cust-pending" data-bs-toggle="tab" class="nav-link">Pending ({{ pending_trips|length|default:"0" }})</a></li>
+                                    <li class="nav-item"><a href="#cust-cancelled" data-bs-toggle="tab" class="nav-link">Cancelled ({{ cancelled_trips|length|default:"0" }})</a></li>
+                                </ul>
+                                <div class="tab-content">
+                                    
+
+                                    <div class="tab-pane show active" id="cust-completed">
+                                        {% if completed_trips %}
+                                        <div class="table-responsive">
+                                            <table class="table table-centered table-nowrap table-hover mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Trip ID</th>
+                                                        <th>Amount</th>
+                                                        <th>Status</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for trip in completed_trips %}
+                                                    <tr>
+                                                        <td>{{ trip.dateCreated|date:"M d, Y H:i" }}</td>
+                                                        <td>
+                                                            {% if trip.id %}
+                                                                <a href="{% url 'order_detail' trip.id %}" class="text-primary">{{ trip.id|truncatechars:8 }}</a>
+                                                            {% else %}
+                                                                <span class="text-muted">N/A</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>₦{{ trip.deliveryAmount|default:"0.00" }}</td>
+                                                        <td><span class="badge bg-success">{{ trip.status|title }}</span></td>
+                                                        <td>
+                                                            {% if trip.id %}
+                                                                <a href="{% url 'order_detail' trip.id %}" class="btn btn-sm btn-outline-primary"><i class="ri-eye-line"></i></a>
+                                                            {% else %}
+                                                                <span class="text-muted">-</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                            <div class="alert alert-info">No completed orders.</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="tab-pane" id="cust-intransit">
+                                        {% if in_transit_trips %}
+                                        <div class="table-responsive">
+                                            <table class="table table-centered table-nowrap table-hover mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Trip ID</th>
+                                                        <th>Amount</th>
+                                                        <th>Status</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for trip in in_transit_trips %}
+                                                    <tr>
+                                                        <td>{{ trip.dateCreated|date:"M d, Y H:i" }}</td>
+                                                        <td>
+                                                            {% if trip.id %}
+                                                                <a href="{% url 'order_detail' trip.id %}" class="text-primary">{{ trip.id|truncatechars:8 }}</a>
+                                                            {% else %}
+                                                                <span class="text-muted">N/A</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>₦{{ trip.deliveryAmount|default:"0.00" }}</td>
+                                                        <td><span class="badge bg-info">{{ trip.status|title }}</span></td>
+                                                        <td>
+                                                            {% if trip.id %}
+                                                                <a href="{% url 'order_detail' trip.id %}" class="btn btn-sm btn-outline-primary"><i class="ri-eye-line"></i></a>
+                                                            {% else %}
+                                                                <span class="text-muted">-</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                            <div class="alert alert-info">No in-transit orders.</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="tab-pane" id="cust-pending">
+                                        {% if pending_trips %}
+                                        <div class="table-responsive">
+                                            <table class="table table-centered table-nowrap table-hover mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Trip ID</th>
+                                                        <th>Amount</th>
+                                                        <th>Status</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for trip in pending_trips %}
+                                                    <tr>
+                                                        <td>{{ trip.dateCreated|date:"M d, Y H:i" }}</td>
+                                                        <td>
+                                                            {% if trip.id %}
+                                                                <a href="{% url 'order_detail' trip.id %}" class="text-primary">{{ trip.id|truncatechars:8 }}</a>
+                                                            {% else %}
+                                                                <span class="text-muted">N/A</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>₦{{ trip.deliveryAmount|default:"0.00" }}</td>
+                                                        <td><span class="badge bg-warning">{{ trip.status|title }}</span></td>
+                                                        <td>
+                                                            {% if trip.id %}
+                                                                <a href="{% url 'order_detail' trip.id %}" class="btn btn-sm btn-outline-primary"><i class="ri-eye-line"></i></a>
+                                                            {% else %}
+                                                                <span class="text-muted">-</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                            <div class="alert alert-info">No pending orders.</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="tab-pane" id="cust-cancelled">
+                                        {% if cancelled_trips %}
+                                        <div class="table-responsive">
+                                            <table class="table table-centered table-nowrap table-hover mb-0">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Date</th>
+                                                        <th>Trip ID</th>
+                                                        <th>Amount</th>
+                                                        <th>Status</th>
+                                                        <th>Actions</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    {% for trip in cancelled_trips %}
+                                                    <tr>
+                                                        <td>{{ trip.dateCreated|date:"M d, Y H:i" }}</td>
+                                                        <td>
+                                                            {% if trip.id %}
+                                                                <a href="{% url 'order_detail' trip.id %}" class="text-primary">{{ trip.id|truncatechars:8 }}</a>
+                                                            {% else %}
+                                                                <span class="text-muted">N/A</span>
+                                                            {% endif %}
+                                                        </td>
+                                                        <td>₦{{ trip.deliveryAmount|default:"0.00" }}</td>
+                                                        <td><span class="badge bg-danger">{{ trip.status|title }}</span></td>
+                                                        <td>
+                                                            {% if trip.id %}
+                                                                <a href="{% url 'order_detail' trip.id %}" class="btn btn-sm btn-outline-primary"><i class="ri-eye-line"></i></a>
+                                                            {% else %}
+                                                                <span class="text-muted">-</span>
+                                                            {% endif %}
+                                                        </td>
+                                                    </tr>
+                                                    {% endfor %}
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                        {% else %}
+                                            <div class="alert alert-info">No cancelled orders.</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
+
+    <!-- Leaflet JS and live polling script -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        (function() {
+            const customerId = "{{ customer.id }}";
+            const mapEl = document.getElementById('customer-map');
+            if (!mapEl) return;
+
+            const defaultLat = 6.5244;
+            const defaultLng = 3.3792;
+            let map = L.map('customer-map').setView([defaultLat, defaultLng], 12);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+
+            let marker = null;
+            let lastKey = null;
+
+            function reverseGeocode(lat, lng) {
+                const addrEl = document.getElementById('cust-address');
+                if (!lat || !lng || !addrEl) return;
+                const key = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+                if (key === lastKey) return;
+                lastKey = key;
+                addrEl.textContent = 'Address: resolving...';
+                const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}&zoom=18`;
+                fetch(url).then(r => r.json()).then(j => {
+                    const name = (j && (j.name || (j.address && (j.address.road || j.address.neighbourhood || j.address.suburb || j.address.village || j.address.town || j.address.city))));
+                    const display = j && (j.display_name || name) || '-';
+                    addrEl.textContent = `Address: ${display}`;
+                }).catch(() => { addrEl.textContent = 'Address: -'; });
+            }
+
+            function refresh() {
+                fetch(`/api/customers/${customerId}/live/`, { headers: { 'Cache-Control': 'no-cache' }})
+                    .then(r => r.json())
+                    .then(data => {
+                        if (!data || !data.success) return;
+                        const loc = data.location || {};
+                        const lat = parseFloat(loc.latitude || 0);
+                        const lng = parseFloat(loc.longitude || 0);
+                        if (lat && lng) {
+                            const latLng = [lat, lng];
+                            if (!marker) {
+                                marker = L.marker(latLng).addTo(map);
+                                map.setView(latLng, 14);
+                            } else {
+                                marker.setLatLng(latLng);
+                            }
+                            document.getElementById('cust-location').textContent = `Lat: ${lat}, Lng: ${lng}`;
+                            document.getElementById('cust-updated').textContent = `Updated: ${loc.last_updated || '-'}`;
+                            reverseGeocode(lat, lng);
+                        }
+                    })
+                    .catch(() => {});
+            }
+
+            refresh();
+            setInterval(refresh, 10000);
+        })();
+    </script>
 {% endblock %}

@@ -1,0 +1,257 @@
+
+
+{% extends 'base.html' %}
+{% block content %}
+<style>
+    .mailing-header {
+        background: #2c3e50;
+        border-radius: 12px;
+        padding: 2.5rem;
+        color: white;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #3498db;
+    }
+
+    .mailing-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 0.5rem;
+        font-size: 0.95rem;
+    }
+
+    .form-control {
+        border: 2px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 0.75rem 1rem;
+        transition: all 0.2s ease;
+        font-size: 0.95rem;
+    }
+
+    .form-control:focus {
+        border-color: #3498db;
+        box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        outline: none;
+    }
+
+    .form-control::placeholder {
+        color: #a0aec0;
+    }
+
+    .btn-send {
+        background: #27ae60;
+        color: white;
+        padding: 0.875rem 2.5rem;
+        border-radius: 8px;
+        font-weight: 600;
+        border: none;
+        transition: all 0.3s ease;
+        font-size: 1rem;
+        box-shadow: 0 2px 8px rgba(39, 174, 96, 0.2);
+    }
+
+    .btn-send:hover {
+        background: #229954;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+        color: white;
+    }
+
+    .stats-badge {
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .stats-badge i {
+        font-size: 1.25rem;
+    }
+
+    .alert {
+        border-radius: 10px;
+        padding: 1.25rem;
+        border: none;
+        font-weight: 500;
+    }
+
+    .alert-success {
+        background: #d4edda;
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+
+    .alert-info {
+        background: #d1ecf1;
+        color: #0c5460;
+        border-left: 4px solid #17a2b8;
+    }
+
+    .form-section {
+        padding: 2rem;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2d3748;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .section-title i {
+        color: #3498db;
+        font-size: 1.5rem;
+    }
+
+    .character-count {
+        font-size: 0.875rem;
+        color: #718096;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+
+    @media (max-width: 768px) {
+        .mailing-header {
+            padding: 1.5rem;
+        }
+
+        .btn-send {
+            width: 100%;
+        }
+
+        .stats-badge {
+            width: 100%;
+            justify-content: center;
+            margin-top: 1rem;
+        }
+    }
+</style>
+
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="mailing-header">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <div>
+                                <h2 class="mb-2" style="font-weight: 700;">Driver Mailing Center</h2>
+                                <p class="mb-0 opacity-90">Send broadcast emails to all registered drivers</p>
+                            </div>
+                            <div class="stats-badge">
+                                <i class="ri-steering-2-line"></i>
+                                <span>All Drivers</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    {% if success %}
+                        <div class="alert alert-success mb-3">
+                            <i class="ri-checkbox-circle-line me-2"></i>
+                            {{ success }}
+                        </div>
+                    {% endif %}
+                    
+                    {% if error %}
+                        <div class="alert alert-danger mb-3">
+                            <i class="ri-error-warning-line me-2"></i>
+                            {{ error }}
+                        </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="mailing-card">
+                                <div class="form-section">
+                                    <div class="section-title">
+                                        <i class="ri-mail-send-line"></i>
+                                        <span>Compose Message</span>
+                                    </div>
+
+                                    <form method="post" action="{% url 'driver_mailing' %}">
+                                        {% csrf_token %}
+                                        <div class="mb-4">
+                                            <label for="subject" class="form-label">
+                                                <i class="ri-text me-1"></i> Email Subject
+                                            </label>
+                                            <input 
+                                                type="text" 
+                                                class="form-control" 
+                                                id="subject" 
+                                                name="subject" 
+                                                placeholder="Enter email subject line..."
+                                                required
+                                                maxlength="200">
+                                            <div class="character-count">
+                                                <span id="subject-count">0</span>/200 characters
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-4">
+                                            <label for="message" class="form-label">
+                                                <i class="ri-message-3-line me-1"></i> Email Message
+                                            </label>
+                                            <textarea 
+                                                class="form-control" 
+                                                id="message" 
+                                                name="message" 
+                                                rows="8" 
+                                                placeholder="Write your message to drivers..."
+                                                required
+                                                maxlength="5000"></textarea>
+                                            <div class="character-count">
+                                                <span id="message-count">0</span>/5000 characters
+                                            </div>
+                                        </div>
+
+                                        <div class="alert alert-info">
+                                            <i class="ri-information-line me-2"></i>
+                                            This message will be sent to all registered drivers. Please review carefully before sending.
+                                        </div>
+
+                                        <button type="submit" class="btn btn-send">
+                                            <i class="ri-send-plane-fill me-2"></i>
+                                            Send to All Drivers
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Character counters
+document.getElementById('subject').addEventListener('input', function() {
+    document.getElementById('subject-count').textContent = this.value.length;
+});
+
+document.getElementById('message').addEventListener('input', function() {
+    document.getElementById('message-count').textContent = this.value.length;
+});
+</script>
+{% endblock %}

@@ -1,0 +1,322 @@
+
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="content-page">
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-12">
+                    <div class="page-title-box">
+                        <div class="page-title-right">
+                            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPaymentModeModal">
+                                <i class="ri-add-line me-1"></i> Add Payment Mode
+                            </button>
+                        </div>
+                        <h4 class="page-title">Payment Modes Management</h4>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-centered table-nowrap table-hover mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Payment Mode</th>
+                                            <th>Status</th>
+                                            <th>Created Date</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% if payment_modes %}
+                                            {% for mode in payment_modes %}
+                                            <tr>
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <div class="avatar-xs me-2">
+                                                            <span class="avatar-title rounded-circle bg-primary text-white">
+                                                                {% if mode.mode == 'cash' %}
+                                                                    <i class="ri-money-dollar-circle-line"></i>
+                                                                {% elif mode.mode == 'card' %}
+                                                                    <i class="ri-bank-card-line"></i>
+                                                                {% elif mode.mode == 'transfer' %}
+                                                                    <i class="ri-exchange-line"></i>
+                                                                {% elif mode.mode == 'wallet' %}
+                                                                    <i class="ri-wallet-line"></i>
+                                                                {% elif mode.mode == 'mobile' %}
+                                                                    <i class="ri-smartphone-line"></i>
+                                                                {% else %}
+                                                                    {{ mode.mode|first|upper }}
+                                                                {% endif %}
+                                                            </span>
+                                                        </div>
+                                                        <div>
+                                                            <strong>{{ mode.mode|title }}</strong>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge {% if mode.status == 'Active' %}bg-success{% else %}bg-secondary{% endif %}">
+                                                        {{ mode.status|default:"Active" }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ mode.dateCreated|date:"M d, Y"|default:"N/A" }}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                                data-bs-toggle="modal" data-bs-target="#editPaymentModeModal"
+                                                                data-mode-id="{{ mode.id }}"
+                                                                data-mode-name="{{ mode.mode }}"
+                                                                data-mode-status="{{ mode.status }}">
+                                                            <i class="ri-edit-line"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                                onclick="deletePaymentMode('{{ mode.id }}', '{{ mode.mode }}')">
+                                                            <i class="ri-delete-bin-line"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        {% else %}
+                                            <tr>
+                                                <td colspan="4" class="text-center">
+                                                    <div class="py-4">
+                                                        <i class="ri-bank-card-line fs-48 text-muted mb-3"></i>
+                                                        <h5>No Payment Modes</h5>
+                                                        <p class="text-muted">Create payment methods that customers can use to pay for deliveries.</p>
+                                                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createPaymentModeModal">
+                                                            <i class="ri-add-line me-1"></i> Add Payment Mode
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        {% endif %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Common Payment Modes Reference -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Common Payment Modes</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-2 mb-3">
+                                    <div class="card border text-center">
+                                        <div class="card-body py-3">
+                                            <i class="ri-money-dollar-circle-line fs-24 text-success mb-2"></i>
+                                            <h6 class="card-title mb-0">Cash</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="card border text-center">
+                                        <div class="card-body py-3">
+                                            <i class="ri-bank-card-line fs-24 text-primary mb-2"></i>
+                                            <h6 class="card-title mb-0">Card</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="card border text-center">
+                                        <div class="card-body py-3">
+                                            <i class="ri-exchange-line fs-24 text-info mb-2"></i>
+                                            <h6 class="card-title mb-0">Transfer</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="card border text-center">
+                                        <div class="card-body py-3">
+                                            <i class="ri-wallet-line fs-24 text-warning mb-2"></i>
+                                            <h6 class="card-title mb-0">Wallet</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="card border text-center">
+                                        <div class="card-body py-3">
+                                            <i class="ri-smartphone-line fs-24 text-secondary mb-2"></i>
+                                            <h6 class="card-title mb-0">Mobile</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-2 mb-3">
+                                    <div class="card border text-center">
+                                        <div class="card-body py-3">
+                                            <i class="ri-qr-code-line fs-24 text-dark mb-2"></i>
+                                            <h6 class="card-title mb-0">QR Code</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted">
+                                <strong>Note:</strong> These are common payment methods you can add to your system. Only active payment modes will be available for customer selection.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Payment Mode Modal -->
+<div class="modal fade" id="createPaymentModeModal" tabindex="-1" aria-labelledby="createPaymentModeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'create_payment_mode' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="createPaymentModeModalLabel">Create Payment Mode</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="mode" class="form-label">Payment Mode Name</label>
+                        <input type="text" class="form-control" id="mode" name="mode" required 
+                               placeholder="e.g., cash, card, transfer, wallet">
+                        <small class="form-text text-muted">Enter a simple payment method name (lowercase recommended)</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" name="status" required>
+                            <option value="Active" selected>Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                        <small class="form-text text-muted">Only active payment modes will be available for selection</small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>Popular Options:</strong> cash, card, transfer, wallet, mobile, qr
+                    </div>
+                    
+                    <!-- Quick suggestions -->
+                    <div class="mb-3">
+                        <label class="form-label">Quick Add:</label>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-sm btn-outline-success" onclick="fillMode('cash')">
+                                <i class="ri-money-dollar-circle-line me-1"></i>Cash
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="fillMode('card')">
+                                <i class="ri-bank-card-line me-1"></i>Card
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-info" onclick="fillMode('transfer')">
+                                <i class="ri-exchange-line me-1"></i>Transfer
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning" onclick="fillMode('wallet')">
+                                <i class="ri-wallet-line me-1"></i>Wallet
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="fillMode('mobile')">
+                                <i class="ri-smartphone-line me-1"></i>Mobile
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Payment Mode</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Payment Mode Modal -->
+<div class="modal fade" id="editPaymentModeModal" tabindex="-1" aria-labelledby="editPaymentModeModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" id="editPaymentModeForm">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editPaymentModeModalLabel">Edit Payment Mode</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="edit_mode" class="form-label">Payment Mode Name</label>
+                        <input type="text" class="form-control" id="edit_mode" name="mode" required>
+                        <small class="form-text text-muted">Enter a simple payment method name (lowercase recommended)</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="edit_status" class="form-label">Status</label>
+                        <select class="form-select" id="edit_status" name="status" required>
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                        <small class="form-text text-muted">Only active payment modes will be available for selection</small>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="ri-information-line me-2"></i>
+                        <strong>Note:</strong> Changing the payment mode name may affect existing orders that use this payment method.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Update Payment Mode</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+// Handle edit modal
+document.addEventListener('DOMContentLoaded', function() {
+    const editModal = document.getElementById('editPaymentModeModal');
+    const editForm = document.getElementById('editPaymentModeForm');
+    
+    editModal.addEventListener('show.bs.modal', function (event) {
+        const button = event.relatedTarget;
+        const modeId = button.getAttribute('data-mode-id');
+        const modeName = button.getAttribute('data-mode-name');
+        const modeStatus = button.getAttribute('data-mode-status');
+        
+        document.getElementById('edit_mode').value = modeName || '';
+        document.getElementById('edit_status').value = modeStatus || 'Active';
+        
+        editForm.action = `/payment-modes/${modeId}/update/`;
+    });
+});
+
+// Quick fill function for create modal
+function fillMode(modeName) {
+    document.getElementById('mode').value = modeName;
+}
+
+// Delete payment mode
+function deletePaymentMode(modeId, modeName) {
+    if (confirm(`Are you sure you want to delete "${modeName}"? This action cannot be undone and may affect existing orders using this payment method.`)) {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/payment-modes/${modeId}/delete/`;
+        
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken;
+        
+        form.appendChild(csrfInput);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
+</script>
+{% endblock %}
