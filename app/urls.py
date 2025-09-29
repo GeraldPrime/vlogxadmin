@@ -1,33 +1,33 @@
-# from django.urls import path
-# from . import views
-
-# urlpatterns = [
-#     path('', views.home, name='home'),
-    
-#     # Driver endpoints
-#     path('test-firebase/', views.test_firebase_connection, name='test_firebase'),
-    
-#     path('drivers/', views.drivers_list, name='drivers_list'),
-#     path('drivers/<str:driver_id>/', views.driver_detail, name='driver_detail'),
-    
-#     # Customer endpoints
-#     path('customers/', views.customers_list, name='customers_list'),
-#     path('customers/<str:customer_id>/', views.customer_detail, name='customer_detail'),
-    
-#     # Analytics endpoints
-#     path('dashboard/stats/', views.dashboard_stats, name='dashboard_stats'),
-  
-  
-# ]
-
 # logistics_app/urls.py - Updated URLs
 from django.urls import path
 from . import views
 from .views_mailing import customer_mailing, driver_mailing, customer_mailing_ajax
 from .views_faqs import faqs_list, faq_create, faq_edit, faq_delete
 from django.views.generic import TemplateView
+from django.contrib.auth import views as auth_views
 
 urlpatterns = [
+    # Authentication URLs
+    path('signin/', views.signin_view, name='signin'),
+    path('signout/', views.signout_view, name='signout'),
+    
+    # Password Reset URLs
+    path('password_reset/', auth_views.PasswordResetView.as_view(
+        template_name='registration/password_reset_form.html',
+        email_template_name='registration/password_reset_email.html',
+        success_url='/password_reset/done/'
+    ), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(
+        template_name='registration/password_reset_done.html'
+    ), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+        template_name='registration/password_reset_confirm.html',
+        success_url='/reset/done/'
+    ), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(
+        template_name='registration/password_reset_complete.html'
+    ), name='password_reset_complete'),
+    
     path('', views.home, name='home'),
     path('drivers/', views.drivers_management, name='drivers_management'),
     path('customers/', views.customers_management, name='customers_management'),

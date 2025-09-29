@@ -47,6 +47,12 @@ CORS_ALLOWED_ORIGINS = [
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
+LOGIN_URL = 'signin'
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'signin'
+
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-w_psjf0az3sc2rdx+a0m0d*9zp6vcfpp6be!71ji5urnil3y0b'
 

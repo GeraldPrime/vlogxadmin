@@ -4,6 +4,8 @@ from rest_framework.response import Response
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
 from .firebase_service import FirebaseService
 import json
 import logging
@@ -11,25 +13,26 @@ import logging
 logger = logging.getLogger(__name__)
 firebase_service = FirebaseService()
 
-# Template Views (for your admin interface)
-# def home(request):
-#     """Dashboard home page"""
-#     try:
-#         driver_stats = firebase_service.get_drivers_stats()
-#         customer_stats = firebase_service.get_customers_stats()
+def signin_view(request):
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
         
-#         context = {
-#             'driver_stats': driver_stats,
-#             'customer_stats': customer_stats,
-#             'total_drivers': driver_stats.get('total_drivers', 0),
-#             'active_drivers': driver_stats.get('active_drivers', 0),
-#             'total_customers': customer_stats.get('total_customers', 0),
-#         }
-#         return render(request, "index.html", context)
-#     except Exception as e:
-#         messages.error(request, f"Error loading dashboard: {str(e)}")
-#         return render(request, "index.html", {'driver_stats': {}, 'customer_stats': {}})
+        if user is not None:
+            login(request, user)
+            return redirect('home')
+        else:
+            messages.error(request, 'Invalid username or password.')
+            return redirect('signin')
+    
+    return render(request, 'signin.html')
 
+def signout_view(request):
+    logout(request)
+    return redirect('signin')
+
+@login_required(login_url='signin')
 def home(request):
     """Enhanced dashboard home page with comprehensive analytics"""
     try:
@@ -86,6 +89,7 @@ def home(request):
         }) 
 
 
+@login_required(login_url='signin')
 def drivers_management(request):
     """Drivers management page"""
     try:
